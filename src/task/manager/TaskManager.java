@@ -7,13 +7,14 @@ import task.model.EpicTask;
 import task.model.Task;
 import task.store.TaskRepository;
 
-public class TaskManager {
-    private final TaskRepository store;
-    public TaskManager(final TaskRepository store) {
+public class TaskManager<T extends Task> {
+  private final TaskRepository<T> store;
+
+  public TaskManager(final TaskRepository<T> store) {
         this.store = store;
     }
 
-    public Collection<Task> getAllTasks() {
+  public Collection<T> getAllTasks() {
         return store.getAllTasks();
     }
 
@@ -21,24 +22,24 @@ public class TaskManager {
         store.clearAllTasks();
     }
 
-    public Optional<Task> getTaskById(int id) {
+  public Optional<T> getTaskById(int id) {
         return store.getTaskById(id);
     }
 
-    public Task addTask(final Task task) {
+  public T addTask(final T task) {
         return store.addTask(task.getId(), task);
     }
 
-    public Task updateTask(final Task task) {
+  public T updateTask(final T task) {
         return store.updateTask(task.getId(), task);
     }
 
-    public Collection<Task> getEpicSubtasks(EpicTask epicTask) {
+  public Collection<T> getEpicSubtasks(EpicTask epicTask) {
         List<Integer> subtasksIds = epicTask.getSubtaskIds();
         return store.findTasksMatching(task -> subtasksIds.contains(task.getId()));
     }
 
-    public Collection<Task> getAllTasksByClass(Class<Task> targetClass) {
+  public Collection<T> getAllTasksByClass(Class<T> targetClass) {
         return store.findTasksMatching(targetClass::isInstance).stream().toList();
     }
 }
