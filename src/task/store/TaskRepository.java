@@ -1,10 +1,9 @@
 package task.store;
 
-import task.model.Task;
-
 import java.util.*;
 import java.util.function.Predicate;
 import java.util.stream.Stream;
+import task.model.Task;
 
 /**
  * A repository for managing {@link Task} objects, providing operations for adding, updating,
@@ -20,12 +19,12 @@ public class TaskRepository {
      *
      * @param id    the unique identifier for the task
      * @param task  the task to be added or replaced
-     * @return the previous task associated with the ID, or {@code null} if none existed
+     * @return an {@link Optional} containing the previous task associated with the ID, or an empty {@link Optional} if none existed
      * @throws NullPointerException if the provided task is {@code null}
      */
-    public Task addTask(final int id, final Task task) {
+    public Optional<Task> addTask(final int id, final Task task) {
         Objects.requireNonNull(task, "Task can't be null");
-        return taskStore.put(id, task);
+        return Optional.ofNullable(taskStore.put(id, task));
     }
 
     /**
@@ -34,7 +33,7 @@ public class TaskRepository {
      *
      * @param id          the unique identifier of the task to update
      * @param updatedTask the new task details
-     * @return the updated task
+     * @return the updated {@link Task} after replacing the previous task with the specified ID
      * @throws NullPointerException if the provided task is {@code null}
      * @throws IllegalArgumentException if no task exists for the specified ID
      */
@@ -67,7 +66,7 @@ public class TaskRepository {
     /**
      * Returns a stream of all tasks stored in the repository.
      *
-     * @return a {@link Stream} of key-value pairs where the key is the task ID and the value is the {@link Task}
+     * @return a {@link Stream} of {@link Map.Entry} objects, each containing a task ID as the key and a {@link Task} as the value
      */
     public Stream<Map.Entry<Integer, Task>> getAllTasksStream() {
         return taskStore.entrySet().stream();
@@ -77,35 +76,35 @@ public class TaskRepository {
      * Removes a task from the repository by its unique identifier.
      *
      * @param id the unique identifier of the task to remove
-     * @return the removed task
+     * @return an {@link Optional} containing the removed task, or an empty {@link Optional} if no task was found for the given ID
      * @throws IllegalArgumentException if no task exists for the specified ID
      */
-    public Task removeTaskById(final int id) {
+    public Optional<Task> removeTaskById(final int id) {
         checkTaskExists(id);
-        return taskStore.remove(id);
+        return Optional.ofNullable(taskStore.remove(id));
     }
 
     /**
-     * Finds tasks that match the given filter criteria.
+     * Finds tasks that match the given taskPredicate criteria.
      *
-     * @param filter the {@link Predicate} to apply to each task
-     * @return a {@link Collection} of tasks that match the filter
+     * @param taskPredicate the {@link Predicate} to apply to each task
+     * @return a {@link Collection} of tasks that satisfy the given {@link Predicate}; an empty list if no such tasks exist
      */
-    public Collection<Task> findTasksMatching(final Predicate<Task> filter) {
-        return taskStore.values().stream().filter(filter).toList();
+    public Collection<Task> findTasksMatching(final Predicate<Task> taskPredicate) {
+        return taskStore.values().stream().filter(taskPredicate).toList();
     }
 
     /**
-     * Removes tasks from the repository that satisfy the given filter condition.
+     * Removes tasks from the repository that satisfy the given taskPredicate condition.
      *
-     * @param filter the {@link Predicate} used to identify tasks to remove
+     * @param taskPredicate the {@link Predicate} used to identify tasks to remove
      */
-    public void removeMatchingTasks (final Predicate<Task> filter) {
-        taskStore.entrySet().removeIf(entry -> filter.test(entry.getValue()));
+    public void removeMatchingTasks (final Predicate<Task> taskPredicate) {
+        taskStore.entrySet().removeIf(entry -> taskPredicate.test(entry.getValue()));
     }
 
     /**
-     * Clears all tasks from the repository, making it empty.
+     * Clears all tasks from the repository, making it empty. This operation is irreversible and all stored tasks will be lost.
      */
     public void clearAllTasks() {
         taskStore.clear();
