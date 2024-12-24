@@ -29,19 +29,16 @@ public class TaskManager {
     return store.getTaskById(id);
   }
 
-  public Optional<RegularTask> addTask(final RegularTask task) {
-    return Optional.ofNullable(
-        TypeSafeCaster.castSafely(store.addTask(task.getId(), task), RegularTask.class));
+  public RegularTask addTask(final RegularTask task) {
+    return TypeSafeCaster.castSafely(store.addTask(task), RegularTask.class);
   }
 
-  public Optional<EpicTask> addTask(final EpicTask task) {
-    return Optional.ofNullable(
-        TypeSafeCaster.castSafely(store.addTask(task.getId(), task), EpicTask.class));
+  public EpicTask addTask(final EpicTask task) {
+    return TypeSafeCaster.castSafely(store.addTask(task), EpicTask.class);
   }
 
-  public Optional<SubTask> addTask(final SubTask task) {
-    return Optional.ofNullable(
-        TypeSafeCaster.castSafely(store.addTask(task.getId(), task), SubTask.class));
+  public SubTask addTask(final SubTask task) {
+    return TypeSafeCaster.castSafely(store.addTask(task), SubTask.class);
   }
 
   public Task updateTask(final Task task) {
