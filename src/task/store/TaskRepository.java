@@ -12,19 +12,24 @@ import task.model.Task;
  */
 public class TaskRepository {
     private final Map<Integer, Task> taskStore = new HashMap<>();
-    
-    /**
-     * Adds a new task to the repository. If a task with the same ID already exists,
-     * it is replaced with the specified task.
-     *
-     * @param id    the unique identifier for the task
-     * @param task  the task to be added or replaced
-     * @return an {@link Optional} containing the previous task associated with the ID, or an empty {@link Optional} if none existed
-     * @throws NullPointerException if the provided task is {@code null}
-     */
-    public Optional<Task> addTask(final int id, final Task task) {
+
+  /**
+   * Adds a new task to the repository. The task is identified by its unique ID, and if a task with
+   * the same ID already exists in the repository, the operation will fail.
+   *
+   * @param task the task to be added to the repository
+   * @return the {@link Task} object added to the repository
+   * @throws NullPointerException if the provided task is {@code null}
+   * @throws IllegalArgumentException if a task with the same ID already exists in the repository
+   */
+  public Task addTask(final Task task) {
         Objects.requireNonNull(task, "Task can't be null");
-        return Optional.ofNullable(taskStore.put(id, task));
+    int taskId = task.getId();
+    if (taskStore.containsKey(taskId)) {
+      throw new IllegalArgumentException("Task with the same ID already exists: " + taskId);
+    }
+    taskStore.put(taskId, task);
+    return task;
     }
 
     /**
