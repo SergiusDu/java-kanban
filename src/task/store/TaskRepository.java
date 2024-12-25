@@ -11,7 +11,7 @@ import task.model.Task;
  * in an internal map.
  */
 public class TaskRepository {
-    private final Map<Integer, Task> taskStore = new HashMap<>();
+  private final NavigableMap<Integer, Task> taskStore = new TreeMap<>();
 
   /**
    * Adds a new task to the repository. The task is identified by its unique ID, and if a task with
@@ -23,7 +23,7 @@ public class TaskRepository {
    * @throws IllegalArgumentException if a task with the same ID already exists in the repository
    */
   public Task addTask(final Task task) {
-        Objects.requireNonNull(task, "Task can't be null");
+    Objects.requireNonNull(task, "Task can't be null");
     int taskId = task.getId();
     if (taskStore.containsKey(taskId)) {
       throw new IllegalArgumentException("Task with the same ID already exists: " + taskId);
