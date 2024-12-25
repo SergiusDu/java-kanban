@@ -3,10 +3,8 @@ package task.manager;
 import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
-import task.model.EpicTask;
-import task.model.RegularTask;
-import task.model.SubTask;
-import task.model.Task;
+import task.dto.RegularTaskCreationDto;
+import task.model.*;
 import task.store.TaskRepository;
 import util.TypeSafeCaster;
 
@@ -29,8 +27,14 @@ public class TaskManager {
     return store.getTaskById(id);
   }
 
-  public RegularTask addTask(final RegularTask task) {
-    return TypeSafeCaster.castSafely(store.addTask(task), RegularTask.class);
+  public RegularTask addTask(final RegularTaskCreationDto taskCreationDto) {
+    RegularTask newTask =
+        new RegularTask(
+            0,
+            taskCreationDto.title(),
+            taskCreationDto.description(),
+            RegularTaskCreationDto.status);
+    return TypeSafeCaster.castSafely(store.addTask(newTask), RegularTask.class);
   }
 
   public EpicTask addTask(final EpicTask task) {
