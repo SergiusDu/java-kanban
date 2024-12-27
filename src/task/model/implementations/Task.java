@@ -1,6 +1,7 @@
-package task.model;
+package task.model.implementations;
 
 import java.util.Objects;
+import task.model.enums.TaskStatus;
 
 public abstract sealed class Task permits EpicTask, RegularTask, SubTask {
     private static final int MIN_TITLE_LENGTH = 10;

@@ -1,18 +1,13 @@
-package task.model;
+package task.model.implementations;
+
+import task.model.enums.TaskStatus;
 
 public final class SubTask extends Task {
     private final int epicTaskId;
 
     public SubTask(int id, String title, String description, TaskStatus status, int epicTaskId) {
         super(id, title, description, status);
-        this.epicTaskId = getValidatedEpicTaskId(epicTaskId);
-    }
-
-    private int getValidatedEpicTaskId(int epicTaskId) {
-        if(epicTaskId < 0) {
-            throw new IllegalArgumentException("Epic task ID should be positive");
-        }
-        return epicTaskId;
+    this.epicTaskId = epicTaskId;
     }
 
     public int getEpicTaskId() {

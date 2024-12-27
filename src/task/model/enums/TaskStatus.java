@@ -1,4 +1,4 @@
-package task.model;
+package task.model.enums;
 
 public enum TaskStatus {
     NEW,
