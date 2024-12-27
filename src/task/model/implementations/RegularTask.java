@@ -3,9 +3,9 @@ package task.model.implementations;
 import task.model.enums.TaskStatus;
 
 public final class RegularTask extends Task {
-    public RegularTask(int id, String title, String description, TaskStatus status) {
-        super(id, title, description, status);
-    }
+  public RegularTask(int id, String title, String description, TaskStatus status) {
+    super(id, title, description, status);
+  }
 
   @Override
   public String toString() {

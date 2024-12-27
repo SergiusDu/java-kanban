@@ -16,10 +16,11 @@ import task.validation.ValidatorFactory;
 import util.TypeSafeCaster;
 
 public class TaskManager {
+  public static final String THE_CLASS_TYPE_CANNOT_BE_NULL = "The class type cannot be null.";
   private final TaskRepository store;
 
   public TaskManager(final TaskRepository store) {
-    this.store = store;
+    this.store = Objects.requireNonNull(store, "TaskRepository cannot be null.");
   }
 
   public Collection<Task> getAllTasks() {
@@ -30,24 +31,52 @@ public class TaskManager {
     store.clearAllTasks();
   }
 
+  public <T extends Task> boolean removeTasksByType(final Class<T> clazz) {
+    Objects.requireNonNull(clazz, "Task type cannot be null.");
+    if (clazz == RegularTask.class) {
+      return store.removeMatchingTasks(RegularTask.class::isInstance);
+    } else if (clazz == SubTask.class) {
+      return store.removeMatchingTasks(SubTask.class::isInstance);
+    } else if (clazz == EpicTask.class) {
+      return store.removeMatchingTasks(EpicTask.class::isInstance);
+    } else {
+      throw new ValidationException("Unsupported task type: " + clazz.getSimpleName());
+    }
+  }
+
+  public Optional<Task> removeTaskById(final int id) {
+    Task taskToDelete =
+        store
+            .getTaskById(id)
+            .orElseThrow(
+                () -> new ValidationException("Error: Task with ID " + id + " does not exist."));
+    if (taskToDelete instanceof SubTask subTask) {
+      removeSubTaskFromEpic(subTask.getEpicTaskId(), subTask.getId());
+      updateEpicTaskStatus(getTaskOrThrowIfInvalid(subTask.getEpicTaskId(), EpicTask.class));
+    }
+    return store.removeTaskById(id);
+  }
+
   public Optional<Task> getTaskById(int id) {
     return store.getTaskById(id);
   }
 
   public RegularTask addTask(final RegularTaskCreationDTO regularTaskCreationDTO) {
+    Objects.requireNonNull(regularTaskCreationDTO, "RegularTaskCreationDTO cannot be null.");
     validateDto(regularTaskCreationDTO, RegularTaskCreationDTO.class);
     return store.addTask(regularTaskCreationDTO);
   }
 
   public EpicTask addTask(final EpicTaskCreationDTO epicTaskCreationDTO) {
+    Objects.requireNonNull(epicTaskCreationDTO, "EpicTaskCreationDTO cannot be null.");
     validateDto(epicTaskCreationDTO, EpicTaskCreationDTO.class);
     return store.addTask(epicTaskCreationDTO);
   }
 
   public SubTask addTask(final SubTaskCreationDTO subTaskCreationDTO) {
+    Objects.requireNonNull(subTaskCreationDTO, "SubTaskCreationDTO cannot be null.");
     validateDto(subTaskCreationDTO, SubTaskCreationDTO.class);
-    EpicTask epicTask =
-        validateTypeAndGetTaskFromStore(subTaskCreationDTO.epicId(), EpicTask.class);
+    EpicTask epicTask = getTaskOrThrowIfInvalid(subTaskCreationDTO.epicId(), EpicTask.class);
     SubTask subTask = store.addTask(subTaskCreationDTO);
     Set<Integer> updatedSubtaskIds = new HashSet<>(epicTask.getSubtaskIds());
     updatedSubtaskIds.add(subTask.getId());
@@ -62,8 +91,9 @@ public class TaskManager {
   }
 
   public RegularTask updateTask(final RegularTaskUpdateDTO regularTaskUpdateDTO) {
+    Objects.requireNonNull(regularTaskUpdateDTO, "RegularTaskUpdateDTO cannot be null.");
     validateDto(regularTaskUpdateDTO, RegularTaskUpdateDTO.class);
-    validateTaskTypeInStore(regularTaskUpdateDTO.id(), RegularTask.class);
+    validateTaskTypeOrThrow(regularTaskUpdateDTO.id(), RegularTask.class);
     RegularTask updatedTask =
         new RegularTask(
             regularTaskUpdateDTO.id(),
@@ -74,10 +104,10 @@ public class TaskManager {
   }
 
   public SubTask updateTask(final SubTaskUpdateDTO subTaskUpdateDTO) {
+    Objects.requireNonNull(subTaskUpdateDTO, "SubTaskUpdateDTO cannot be null.");
     validateDto(subTaskUpdateDTO, SubTaskUpdateDTO.class);
-    validateTaskTypeInStore(subTaskUpdateDTO.id(), SubTask.class);
-    validateTaskTypeInStore(subTaskUpdateDTO.epicId(), EpicTask.class);
-
+    validateTaskTypeOrThrow(subTaskUpdateDTO.id(), SubTask.class);
+    validateTaskTypeOrThrow(subTaskUpdateDTO.epicId(), EpicTask.class);
     SubTask currentSubTask =
         TypeSafeCaster.castSafelyOrThrow(store.getTaskById(subTaskUpdateDTO.id()), SubTask.class);
     if (currentSubTask.getEpicTaskId() != subTaskUpdateDTO.epicId()) {
@@ -94,13 +124,14 @@ public class TaskManager {
                     subTaskUpdateDTO.epicId())),
             SubTask.class);
     EpicTask epicTask = attachSubTaskToEpicTask(updatedSubTask);
-    if (updatedSubTask.getStatus() != epicTask.getStatus()) refreshEpicTaskStatus(epicTask);
+    if (updatedSubTask.getStatus() != epicTask.getStatus()) updateEpicTaskStatus(epicTask);
     return updatedSubTask;
   }
 
   public EpicTask updateTask(final EpicTaskUpdateDTO epicTaskUpdateDTO) {
+    Objects.requireNonNull(epicTaskUpdateDTO, "EpicTaskUpdateDTO cannot be null.");
     validateDto(epicTaskUpdateDTO, EpicTaskUpdateDTO.class);
-    EpicTask currentTask = validateTypeAndGetTaskFromStore(epicTaskUpdateDTO.id(), EpicTask.class);
+    EpicTask currentTask = getTaskOrThrowIfInvalid(epicTaskUpdateDTO.id(), EpicTask.class);
     EpicTask updatedTask =
         new EpicTask(
             epicTaskUpdateDTO.id(),
@@ -111,16 +142,21 @@ public class TaskManager {
     return (EpicTask) store.updateTask(updatedTask);
   }
 
-  public Collection<Task> getEpicSubtasks(EpicTask epicTask) {
-    Set<Integer> subtasksIds = epicTask.getSubtaskIds();
-    return store.findTasksMatching(task -> subtasksIds.contains(task.getId()));
+  public Collection<SubTask> getEpicSubtasks(int epicId) {
+    Set<Integer> subtaskIds = getTaskOrThrowIfInvalid(epicId, EpicTask.class).getSubtaskIds();
+    return subtaskIds.stream()
+        .map(subtaskId -> getTaskOrThrowIfInvalid(subtaskId, SubTask.class))
+        .toList();
   }
 
   public Collection<Task> getAllTasksByClass(Class<Task> targetClass) {
+    Objects.requireNonNull(targetClass, THE_CLASS_TYPE_CANNOT_BE_NULL);
     return store.findTasksMatching(targetClass::isInstance).stream().toList();
   }
 
-  private <T> T validateTypeAndGetTaskFromStore(int taskId, Class<T> clazz) {
+  private <T> T getTaskOrThrowIfInvalid(final int taskId, final Class<T> clazz)
+      throws ValidationException {
+    Objects.requireNonNull(clazz, THE_CLASS_TYPE_CANNOT_BE_NULL);
     return store
         .getTaskById(taskId)
         .filter(clazz::isInstance)
@@ -131,7 +167,9 @@ public class TaskManager {
                     "Task with ID " + taskId + " is not an instance of " + clazz.getSimpleName()));
   }
 
-  private <T> void validateTaskTypeInStore(int taskId, Class<T> clazz) {
+  private <T> void validateTaskTypeOrThrow(final int taskId, final Class<T> clazz)
+      throws ValidationException {
+    Objects.requireNonNull(clazz, THE_CLASS_TYPE_CANNOT_BE_NULL);
     boolean isValid = store.getTaskById(taskId).filter(clazz::isInstance).isPresent();
     if (!isValid) {
       throw new ValidationException(
@@ -144,6 +182,7 @@ public class TaskManager {
   }
 
   private TaskStatus calculateEpicTaskStatus(final Set<Integer> subtaskIds) {
+    Objects.requireNonNull(subtaskIds, "Subtask IDs cannot be null.");
     Set<TaskStatus> subTaskStatuses =
         subtaskIds.stream()
             .map(
@@ -156,21 +195,25 @@ public class TaskManager {
                                     "Subtask with ID " + subtaskId + " does not exist"))
                         .getStatus())
             .collect(Collectors.toSet());
+    if (subTaskStatuses.isEmpty()) return TaskStatus.NEW;
     AtomicBoolean areAllDone = new AtomicBoolean(true);
     AtomicBoolean areAllNew = new AtomicBoolean(true);
+    AtomicBoolean stopProcessing = new AtomicBoolean(false);
     subTaskStatuses.parallelStream()
+        .takeWhile(status -> !stopProcessing.get())
         .forEach(
             status -> {
               if (areAllDone.get() && status != TaskStatus.DONE) areAllDone.set(false);
               if (areAllNew.get() && status != TaskStatus.NEW) areAllNew.set(false);
-              if (!areAllNew.get() && !areAllDone.get()) {}
+              if (!areAllNew.get() && !areAllDone.get()) stopProcessing.set(true);
             });
     if (areAllNew.get()) return TaskStatus.NEW;
     if (areAllDone.get()) return TaskStatus.DONE;
     return TaskStatus.IN_PROGRESS;
   }
 
-  private void refreshEpicTaskStatus(final EpicTask epicTask) {
+  private void updateEpicTaskStatus(final EpicTask epicTask) {
+    Objects.requireNonNull(epicTask, "Epic Task can't be null.");
     EpicTask refreshedEpicTask =
         new EpicTask(
             epicTask.getId(),
@@ -181,12 +224,14 @@ public class TaskManager {
     store.updateTask(refreshedEpicTask);
   }
 
-  private <T> void validateDto(T dto, Class<T> clazz) throws ValidationException {
+  private <T> void validateDto(final T dto, final Class<T> clazz) throws ValidationException {
+    Objects.requireNonNull(dto, "The DTO cannot be null.");
+    Objects.requireNonNull(clazz, THE_CLASS_TYPE_CANNOT_BE_NULL);
     Validator<T> validator = ValidatorFactory.getValidator(clazz);
     validator.validate(dto);
   }
 
-  private EpicTask attachSubTaskToEpicTask(SubTask subTask) {
+  private EpicTask attachSubTaskToEpicTask(final SubTask subTask) {
     EpicTask epicTask =
         TypeSafeCaster.castSafelyOrThrow(
             store.getTaskById(subTask.getEpicTaskId()), EpicTask.class);
