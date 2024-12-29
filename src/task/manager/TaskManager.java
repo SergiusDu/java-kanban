@@ -10,7 +10,7 @@ import task.model.implementations.EpicTask;
 import task.model.implementations.RegularTask;
 import task.model.implementations.SubTask;
 import task.model.implementations.Task;
-import task.store.interfaces.TaskRepository;
+import task.store.TaskRepository;
 import task.validation.Validator;
 import task.validation.ValidatorFactory;
 import util.TypeSafeCaster;

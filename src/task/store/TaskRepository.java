@@ -1,4 +1,4 @@
-package task.store.interfaces;
+package task.store;
 
 import java.util.Collection;
 import java.util.Optional;
