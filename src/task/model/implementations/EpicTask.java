@@ -17,9 +17,10 @@ public final class EpicTask extends Task {
     return Set.copyOf(subtaskIds);
   }
 
-  private Set<Integer> getValidatedSubTaskIds(Set<Integer> subtaskIds) {
-    boolean isValidated = subtaskIds.stream().anyMatch(subId -> subId < 0);
-    if (!isValidated) {
+  private Set<Integer> getValidatedSubTaskIds(final Set<Integer> subtaskIds) {
+    if (subtaskIds.isEmpty()) return subtaskIds;
+    boolean isValidated = subtaskIds.stream().anyMatch(subtaskId -> subtaskId < 0);
+    if (isValidated) {
       throw new ValidationException("Subtask IDs cannot contain negative values.");
     }
     return Set.copyOf(subtaskIds);
