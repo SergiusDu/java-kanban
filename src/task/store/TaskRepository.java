@@ -1,6 +1,7 @@
 package task.store;
 
 import java.util.Collection;
+import java.util.NoSuchElementException;
 import java.util.Optional;
 import java.util.function.Predicate;
 import task.dto.EpicTaskCreationDTO;
@@ -54,7 +55,7 @@ public interface TaskRepository {
    * @throws NullPointerException if the provided task is {@code null}
    * @throws IllegalArgumentException if no task exists with the specified ID
    */
-  Task updateTask(Task updatedTask);
+  Task updateTask(Task updatedTask) throws NoSuchElementException;
 
   /**
    * Retrieves all tasks stored in the repository.
