@@ -49,45 +49,64 @@ public class TaskManager {
   }
 
   /**
-   * Removes all tasks of the specified type from the repository.
+   * Removes tasks from the repository that match the specified task type. If the task type is
+   * {@link EpicTask}, all its associated Sub-Tasks will also be removed.
    *
-   * @param clazz the class type of tasks to be removed (e.g., RegularTask, SubTask, EpicTask)
-   * @param <T> the task type
-   * @return true if at least one task was removed, false otherwise
-   * @throws NullPointerException if the specified task class is null
-   * @throws ValidationException if the provided task type is unsupported
+   * @param clazz the class type of the tasks to remove
+   * @param <T> the generic type extending {@link Task} representing the task type
+   * @return {@code true} if at least one task was removed, {@code false} otherwise
+   * @throws NullPointerException if the task type is {@code null}
+   * @throws UnsupportedOperationException if the provided task type is unsupported
    */
-  public <T extends Task> boolean removeTasksByType(final Class<T> clazz) {
+  public <T extends Task> boolean removeTasksByType(final Class<T> clazz)
+      throws UnsupportedOperationException {
     Objects.requireNonNull(clazz, "Task type cannot be null.");
     if (clazz == RegularTask.class) {
       return store.removeMatchingTasks(RegularTask.class::isInstance);
     } else if (clazz == SubTask.class) {
       return store.removeMatchingTasks(SubTask.class::isInstance);
     } else if (clazz == EpicTask.class) {
-      return store.removeMatchingTasks(EpicTask.class::isInstance);
+      return store.findTasksMatching(EpicTask.class::isInstance).stream()
+          .map(EpicTask.class::cast)
+          .map(
+              epicTask -> {
+                epicTask.getSubtaskIds().forEach(store::removeTaskById);
+                return store.removeTaskById(epicTask.getId());
+              })
+          .allMatch(Optional::isPresent);
     } else {
-      throw new ValidationException("Unsupported task type: " + clazz.getSimpleName());
+      throw new UnsupportedOperationException("Unsupported task type: " + clazz.getSimpleName());
     }
   }
 
   /**
-   * Removes a task from the repository by its ID. If the task is a Sub-Task, its association with
-   * its parent Epic Task is also updated.
+   * Removes a task from the repository by its ID. If the task is a Regular Task, it is directly
+   * removed. If the task is a Sub-Task, it is removed and its parent Epic Task's status is updated
+   * accordingly. If the task is an Epic Task, its associated Sub-Tasks are also removed along with
+   * it.
    *
    * @param id the ID of the task to remove
    * @return an {@link Optional} containing the removed task if it existed, or an empty Optional if
    *     not
-   * @throws ValidationException if no task with the specified ID exists
+   * @throws UnsupportedOperationException if the task type is unknown or unsupported
    */
-  public Optional<Task> removeTaskById(final int id) {
-    Task taskToDelete =
-        store
-            .getTaskById(id)
-            .orElseThrow(
-                () -> new ValidationException("Error: Task with ID " + id + " does not exist."));
-    if (taskToDelete instanceof SubTask subTask) {
-      removeSubTaskFromEpic(subTask.getEpicTaskId(), subTask.getId());
-      updateEpicTaskStatus(getTaskOrThrowIfInvalid(subTask.getEpicTaskId(), EpicTask.class));
+  public Optional<Task> removeTaskById(final int id) throws UnsupportedOperationException {
+    Optional<Task> optionalTask = store.getTaskById(id);
+    if (optionalTask.isEmpty()) return Optional.empty();
+    Task taskToDelete = optionalTask.get();
+    switch (taskToDelete) {
+      case RegularTask regularTask -> store.removeTaskById(regularTask.getId());
+      case SubTask subTask -> {
+        removeSubTaskFromEpic(subTask.getEpicTaskId(), subTask.getId());
+        updateEpicTaskStatus(getTaskOrThrowIfInvalid(subTask.getEpicTaskId(), EpicTask.class));
+      }
+      case EpicTask epicTask -> {
+        epicTask.getSubtaskIds().forEach(store::removeTaskById);
+        return store.removeTaskById(epicTask.getId());
+      }
+      default ->
+          throw new UnsupportedOperationException(
+              "Unknown task type: " + taskToDelete.getClass().getName());
     }
     return store.removeTaskById(id);
   }
