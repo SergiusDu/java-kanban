@@ -66,15 +66,15 @@ public final class InMemoryTaskRepository implements TaskRepository {
   }
 
   /**
-   * Updates an existing task in the repository. Replaces the task with the new task details based
-   * on its unique ID. The task must have a valid ID already existing in the repository.
+   * Updates an existing task in the repository with new details. The task to update must have a
+   * valid ID already existing in the repository.
    *
-   * @param updatedTask the new task details, including an existing valid ID
-   * @return the updated {@link Task} after replacing the previous task
-   * @throws NullPointerException if the provided task is {@code null}
-   * @throws IllegalArgumentException if no task exists with the specified ID
+   * @param updatedTask the task containing the updated details, including a valid ID
+   * @return the updated {@link Task} after applying the changes
+   * @throws NullPointerException if the provided {@code updatedTask} is {@code null}
+   * @throws NoSuchElementException if no task exists in the repository for the specified ID
    */
-  public Task updateTask(final Task updatedTask) {
+  public Task updateTask(final Task updatedTask) throws NoSuchElementException {
     Objects.requireNonNull(updatedTask, "Updated task can't be null");
     checkTaskExists(updatedTask.getId());
     taskStore.put(updatedTask.getId(), updatedTask);
@@ -147,11 +147,11 @@ public final class InMemoryTaskRepository implements TaskRepository {
    * Verifies that a task with the specified ID exists in the repository.
    *
    * @param id the unique identifier of the task
-   * @throws IllegalArgumentException if no task with the specified ID exists
+   * @throws NoSuchElementException if no task with the specified ID exists
    */
-  private void checkTaskExists(final int id) {
+  private void checkTaskExists(final int id) throws NoSuchElementException {
     if (!taskStore.containsKey(id)) {
-      throw new IllegalArgumentException("Task ID" + id + "does not exist.");
+      throw new NoSuchElementException("Task ID" + id + "does not exist.");
     }
   }
 
