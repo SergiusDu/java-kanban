@@ -64,7 +64,14 @@ public class TaskManager {
     if (clazz == RegularTask.class) {
       return store.removeMatchingTasks(RegularTask.class::isInstance);
     } else if (clazz == SubTask.class) {
-      return store.removeMatchingTasks(SubTask.class::isInstance);
+      return store.findTasksMatching(SubTask.class::isInstance).stream()
+          .map(SubTask.class::cast)
+          .map(
+              subTask -> {
+                removeSubTaskFromEpic(subTask.getEpicTaskId(), subTask.getId());
+                return store.removeTaskById(subTask.getId());
+              })
+          .allMatch(Optional::isPresent);
     } else if (clazz == EpicTask.class) {
       return store.findTasksMatching(EpicTask.class::isInstance).stream()
           .map(EpicTask.class::cast)
@@ -95,10 +102,13 @@ public class TaskManager {
     if (optionalTask.isEmpty()) return Optional.empty();
     Task taskToDelete = optionalTask.get();
     switch (taskToDelete) {
-      case RegularTask regularTask -> store.removeTaskById(regularTask.getId());
+      case RegularTask regularTask -> {
+        return store.removeTaskById(regularTask.getId());
+      }
       case SubTask subTask -> {
         removeSubTaskFromEpic(subTask.getEpicTaskId(), subTask.getId());
         updateEpicTaskStatus(getTaskOrThrowIfInvalid(subTask.getEpicTaskId(), EpicTask.class));
+        return store.removeTaskById(subTask.getId());
       }
       case EpicTask epicTask -> {
         epicTask.getSubtaskIds().forEach(store::removeTaskById);
@@ -108,7 +118,6 @@ public class TaskManager {
           throw new UnsupportedOperationException(
               "Unknown task type: " + taskToDelete.getClass().getName());
     }
-    return store.removeTaskById(id);
   }
 
   /**
@@ -273,9 +282,11 @@ public class TaskManager {
    * @return a collection of tasks matching the specified class type
    * @throws NullPointerException if the specified class type is null
    */
-  public Collection<Task> getAllTasksByClass(Class<Task> targetClass) {
+  public <T extends Task> Collection<T> getAllTasksByClass(Class<T> targetClass) {
     Objects.requireNonNull(targetClass, THE_CLASS_TYPE_CANNOT_BE_NULL);
-    return store.findTasksMatching(targetClass::isInstance).stream().toList();
+    return store.findTasksMatching(targetClass::isInstance).stream()
+        .map(targetClass::cast)
+        .toList();
   }
 
   /**

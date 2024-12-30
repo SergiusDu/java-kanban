@@ -151,7 +151,7 @@ public final class InMemoryTaskRepository implements TaskRepository {
    */
   private void checkTaskExists(final int id) throws NoSuchElementException {
     if (!taskStore.containsKey(id)) {
-      throw new NoSuchElementException("Task ID" + id + "does not exist.");
+      throw new NoSuchElementException("Task ID" + id + " does not exist.");
     }
   }
 
