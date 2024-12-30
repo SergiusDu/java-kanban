@@ -49,7 +49,7 @@ public final class EpicTask extends Task {
    * @throws ValidationException if any of the subtask IDs are negative
    */
   private Set<Integer> getValidatedSubTaskIds(final Set<Integer> subtaskIds) {
-    if (subtaskIds.isEmpty()) return subtaskIds;
+    if (subtaskIds.isEmpty()) return Set.of();
     boolean isValidated = subtaskIds.stream().anyMatch(subtaskId -> subtaskId < 0);
     if (isValidated) {
       throw new ValidationException("Subtask IDs cannot contain negative values.");
