@@ -8,6 +8,7 @@ import com.tasktracker.task.model.implementations.EpicTask;
 import com.tasktracker.task.model.implementations.RegularTask;
 import com.tasktracker.task.model.implementations.SubTask;
 import com.tasktracker.task.model.implementations.Task;
+import java.time.LocalDateTime;
 import java.util.*;
 import java.util.function.Predicate;
 
@@ -32,7 +33,14 @@ public final class InMemoryTaskRepository implements TaskRepository {
   public RegularTask addTask(final RegularTaskCreationDTO dto) {
     Objects.requireNonNull(dto, TASK_CAN_T_BE_NULL);
     int id = generateId();
-    RegularTask newTask = new RegularTask(id, dto.title(), dto.description(), TaskStatus.NEW);
+    RegularTask newTask =
+        new RegularTask(
+            id,
+            dto.title(),
+            dto.description(),
+            TaskStatus.NEW,
+            LocalDateTime.now(),
+            LocalDateTime.now());
     taskStore.put(id, newTask);
     return newTask;
   }
@@ -49,7 +57,15 @@ public final class InMemoryTaskRepository implements TaskRepository {
   public EpicTask addTask(final EpicTaskCreationDTO dto) {
     Objects.requireNonNull(dto, TASK_CAN_T_BE_NULL);
     int id = generateId();
-    EpicTask newTask = new EpicTask(id, dto.title(), dto.description(), TaskStatus.NEW, Set.of());
+    EpicTask newTask =
+        new EpicTask(
+            id,
+            dto.title(),
+            dto.description(),
+            TaskStatus.NEW,
+            Set.of(),
+            LocalDateTime.now(),
+            LocalDateTime.now());
     taskStore.put(id, newTask);
     return newTask;
   }
@@ -66,7 +82,15 @@ public final class InMemoryTaskRepository implements TaskRepository {
   public SubTask addTask(final SubTaskCreationDTO dto) {
     Objects.requireNonNull(dto, TASK_CAN_T_BE_NULL);
     int id = generateId();
-    SubTask newTask = new SubTask(id, dto.title(), dto.description(), TaskStatus.NEW, dto.epicId());
+    SubTask newTask =
+        new SubTask(
+            id,
+            dto.title(),
+            dto.description(),
+            TaskStatus.NEW,
+            dto.epicId(),
+            LocalDateTime.now(),
+            LocalDateTime.now());
     taskStore.put(id, newTask);
     return newTask;
   }

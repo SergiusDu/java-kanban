@@ -11,6 +11,7 @@ import com.tasktracker.task.store.TaskRepository;
 import com.tasktracker.task.validation.Validator;
 import com.tasktracker.task.validation.ValidatorFactory;
 import com.tasktracker.util.TypeSafeCaster;
+import java.time.LocalDateTime;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.Collectors;
@@ -191,7 +192,9 @@ public class InMemoryTaskManager implements TaskManager {
             epicTask.getTitle(),
             epicTask.getDescription(),
             epicTask.getStatus(),
-            updatedSubtaskIds));
+            updatedSubtaskIds,
+            epicTask.getCreationDate(),
+            LocalDateTime.now()));
     return subTask;
   }
 
@@ -207,13 +210,15 @@ public class InMemoryTaskManager implements TaskManager {
   public RegularTask updateTask(final RegularTaskUpdateDTO regularTaskUpdateDTO) {
     Objects.requireNonNull(regularTaskUpdateDTO, "RegularTaskUpdateDTO cannot be null.");
     validateDto(regularTaskUpdateDTO, RegularTaskUpdateDTO.class);
-    validateTaskTypeOrThrow(regularTaskUpdateDTO.id(), RegularTask.class);
+    RegularTask currentTask = getTaskOrThrowIfInvalid(regularTaskUpdateDTO.id(), RegularTask.class);
     RegularTask updatedTask =
         new RegularTask(
             regularTaskUpdateDTO.id(),
             regularTaskUpdateDTO.title(),
             regularTaskUpdateDTO.description(),
-            regularTaskUpdateDTO.status());
+            regularTaskUpdateDTO.status(),
+            currentTask.getCreationDate(),
+            LocalDateTime.now());
     return (RegularTask) store.updateTask(updatedTask);
   }
 
@@ -230,10 +235,8 @@ public class InMemoryTaskManager implements TaskManager {
   public SubTask updateTask(final SubTaskUpdateDTO subTaskUpdateDTO) {
     Objects.requireNonNull(subTaskUpdateDTO, "SubTaskUpdateDTO cannot be null.");
     validateDto(subTaskUpdateDTO, SubTaskUpdateDTO.class);
-    validateTaskTypeOrThrow(subTaskUpdateDTO.id(), SubTask.class);
+    SubTask currentSubTask = getTaskOrThrowIfInvalid(subTaskUpdateDTO.id(), SubTask.class);
     validateTaskTypeOrThrow(subTaskUpdateDTO.epicId(), EpicTask.class);
-    SubTask currentSubTask =
-        TypeSafeCaster.castSafelyOrThrow(store.getTaskById(subTaskUpdateDTO.id()), SubTask.class);
     if (currentSubTask.getEpicTaskId() != subTaskUpdateDTO.epicId()) {
       removeSubTaskFromEpic(currentSubTask.getEpicTaskId(), subTaskUpdateDTO.id());
     }
@@ -245,7 +248,9 @@ public class InMemoryTaskManager implements TaskManager {
                     subTaskUpdateDTO.title(),
                     subTaskUpdateDTO.description(),
                     subTaskUpdateDTO.status(),
-                    subTaskUpdateDTO.epicId())),
+                    subTaskUpdateDTO.epicId(),
+                    currentSubTask.getCreationDate(),
+                    LocalDateTime.now())),
             SubTask.class);
     EpicTask epicTask = attachSubTaskToEpicTask(updatedSubTask);
     if (updatedSubTask.getStatus() != epicTask.getStatus()) updateEpicTaskStatus(epicTask);
@@ -272,7 +277,9 @@ public class InMemoryTaskManager implements TaskManager {
             epicTaskUpdateDTO.title(),
             epicTaskUpdateDTO.description(),
             currentTask.getStatus(),
-            currentTask.getSubtaskIds());
+            currentTask.getSubtaskIds(),
+            currentTask.getCreationDate(),
+            LocalDateTime.now());
     return (EpicTask) store.updateTask(updatedTask);
   }
 
@@ -401,14 +408,15 @@ public class InMemoryTaskManager implements TaskManager {
    */
   private void updateEpicTaskStatus(final EpicTask epicTask) {
     Objects.requireNonNull(epicTask, "Epic Task can't be null.");
-    EpicTask refreshedEpicTask =
+    store.updateTask(
         new EpicTask(
             epicTask.getId(),
             epicTask.getTitle(),
             epicTask.getDescription(),
             calculateEpicTaskStatus(epicTask.getSubtaskIds()),
-            epicTask.getSubtaskIds());
-    store.updateTask(refreshedEpicTask);
+            epicTask.getSubtaskIds(),
+            epicTask.getCreationDate(),
+            LocalDateTime.now()));
   }
 
   /**
@@ -448,7 +456,9 @@ public class InMemoryTaskManager implements TaskManager {
               epicTask.getTitle(),
               epicTask.getDescription(),
               epicTask.getStatus(),
-              epicSubTaskIds));
+              epicSubTaskIds,
+              epicTask.getCreationDate(),
+              LocalDateTime.now()));
     }
     return epicTask;
   }
@@ -471,6 +481,8 @@ public class InMemoryTaskManager implements TaskManager {
             currentEpicTask.getTitle(),
             currentEpicTask.getDescription(),
             currentEpicTask.getStatus(),
-            previousEpicTaskSubTaskIds));
+            previousEpicTaskSubTaskIds,
+            currentEpicTask.getCreationDate(),
+            LocalDateTime.now()));
   }
 }
