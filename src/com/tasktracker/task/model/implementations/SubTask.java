@@ -2,6 +2,7 @@ package com.tasktracker.task.model.implementations;
 
 import com.tasktracker.task.exception.ValidationException;
 import com.tasktracker.task.model.enums.TaskStatus;
+import java.time.LocalDateTime;
 
 /**
  * Represents a subtask that belongs to a specific epic com.tasktracker.task in a
@@ -14,20 +15,27 @@ public final class SubTask extends Task {
   /**
    * Creates a new SubTask instance.
    *
-   * @param id the unique identifier of the subtask
-   * @param title the title of the subtask
-   * @param description the description of the subtask
-   * @param status the current status of the subtask
-   * @param epicTaskId the ID of the epic com.tasktracker.task to which this subtask belongs
-   * @throws ValidationException if the provided epic com.tasktracker.task ID is invalid
+   * @param id the unique identifier of the subtask; must be greater than 0
+   * @param title the title of the subtask; cannot be null or shorter than the minimum length
+   * @param description the description of the subtask; cannot be null or shorter than the minimum
+   *     length
+   * @param status the current status of the subtask; cannot be null
+   * @param epicTaskId the ID of the epic task to which this subtask belongs; must be non-negative
+   * @param creationDate the creation date of the subtask; cannot be null
+   * @param updateDate the last update time of the subtask; cannot be null
+   * @throws ValidationException if any validation rules for parameters fail
+   * @throws NullPointerException if any parameter is null where not allowed
    */
   public SubTask(
       final int id,
       final String title,
       final String description,
       final TaskStatus status,
-      final int epicTaskId) {
-    super(id, title, description, status);
+      final int epicTaskId,
+      final LocalDateTime creationDate,
+      final LocalDateTime updateDate)
+      throws ValidationException, NullPointerException {
+    super(id, title, description, status, creationDate, updateDate);
     this.epicTaskId = getValidEpicTaskId(epicTaskId);
   }
 
@@ -74,6 +82,10 @@ public final class SubTask extends Task {
         + super.getStatus()
         + ", epicTaskId="
         + epicTaskId
+        + ", creationDate="
+        + super.getCreationDate()
+        + ", updateDate="
+        + super.getUpdateDate()
         + '}';
   }
 }

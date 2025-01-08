@@ -2,6 +2,7 @@ package com.tasktracker.task.model.implementations;
 
 import com.tasktracker.task.exception.ValidationException;
 import com.tasktracker.task.model.enums.TaskStatus;
+import java.time.LocalDateTime;
 import java.util.Set;
 
 /**
@@ -15,21 +16,28 @@ public final class EpicTask extends Task {
   /**
    * Constructs a new {@code EpicTask} instance with the specified parameters.
    *
-   * @param id the unique identifier of the com.tasktracker.task
-   * @param title the title of the com.tasktracker.task
-   * @param description a description of the com.tasktracker.task's purpose or details
-   * @param status the current status of the com.tasktracker.task, from {@link TaskStatus}
-   * @param subtaskIds a set of IDs representing the subtasks associated with this epic
-   *     com.tasktracker.task
-   * @throws ValidationException if the provided {@code subtaskIds} contains any negative values
+   * @param id the unique identifier of the task; must be greater than 0
+   * @param title the title of the task; cannot be null or shorter than the minimum required length
+   * @param description a description of the task; cannot be null or shorter than the minimum
+   *     required length
+   * @param status the current status of the task; cannot be null
+   * @param subtaskIds a set of IDs representing the subtasks associated with this epic task; cannot
+   *     contain negative values
+   * @param creationDate the creation date of the task; cannot be null
+   * @param updateDate the last update time of the task; cannot be null
+   * @throws ValidationException if any validation criteria are not met
+   * @throws NullPointerException if any parameter marked as non-null is null
    */
   public EpicTask(
       final int id,
       final String title,
       final String description,
       final TaskStatus status,
-      final Set<Integer> subtaskIds) {
-    super(id, title, description, status);
+      final Set<Integer> subtaskIds,
+      final LocalDateTime creationDate,
+      final LocalDateTime updateDate)
+      throws ValidationException, NullPointerException {
+    super(id, title, description, status, creationDate, updateDate);
     this.subtaskIds = getValidatedSubTaskIds(subtaskIds);
   }
 
@@ -61,7 +69,7 @@ public final class EpicTask extends Task {
 
   /**
    * Returns a string representation of the epic com.tasktracker.task, including its ID, title,
-   * description, status, and associated subtask IDs.
+   * description, status, creation time, update time, and associated subtask IDs.
    *
    * @return a string representation of this instance
    */
@@ -78,6 +86,10 @@ public final class EpicTask extends Task {
         + '\''
         + ", status="
         + super.getStatus()
+        + ", creationDate="
+        + super.getCreationDate()
+        + ", updateDate="
+        + super.getUpdateDate()
         + ", subtaskIds="
         + subtaskIds.toString()
         + '}';

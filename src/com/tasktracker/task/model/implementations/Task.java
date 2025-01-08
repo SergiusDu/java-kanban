@@ -3,6 +3,8 @@ package com.tasktracker.task.model.implementations;
 import com.tasktracker.task.exception.ValidationException;
 import com.tasktracker.task.model.enums.TaskStatus;
 import com.tasktracker.task.validation.CommonValidationUtils;
+import java.time.LocalDateTime;
+import java.util.Comparator;
 import java.util.Objects;
 
 /**
@@ -11,31 +13,57 @@ import java.util.Objects;
  * {@link RegularTask}, and {@link SubTask}. This class enforces validation for ID, title,
  * description, and status.
  */
-public abstract sealed class Task permits EpicTask, RegularTask, SubTask {
+public abstract sealed class Task implements Comparable<Task>
+    permits EpicTask, RegularTask, SubTask {
+  public static final Comparator<Task> UPDATE_DATE_COMPARATOR =
+      Comparator.comparing(Task::getUpdateDate);
   private final int id;
   private final String title;
   private final String description;
   private final TaskStatus status;
+  private final LocalDateTime creationDate;
+  private final LocalDateTime updateTime;
 
   /**
-   * Constructs a Task instance with specified ID, title, description, and status. All parameters
-   * are validated, and exceptions are thrown if validation fails.
+   * Constructs a Task instance with specified ID, title, description, status, creation date, and
+   * update time. All input parameters are validated to ensure they meet the required criteria.
    *
-   * @param id the unique identifier for the com.tasktracker.task, must be greater than 0
-   * @param title the title of the com.tasktracker.task, cannot be null or shorter than the minimum
+   * @param id the unique identifier for the task; must be greater than 0
+   * @param title the title of the task; cannot be null or shorter than the minimum length
+   * @param description the description of the task; cannot be null or shorter than the minimum
    *     length
-   * @param description the description of the com.tasktracker.task, cannot be null or shorter than
-   *     the minimum length
-   * @param status the status of the com.tasktracker.task, cannot be null
-   * @throws ValidationException if any validation check fails
+   * @param status the current status of the task; cannot be null
+   * @param creationDate the creation date of the task; cannot be null
+   * @param updateDate the last update time of the task; cannot be null
+   * @throws ValidationException if any of the value validation checks fail
    * @throws NullPointerException if any parameter is null where not allowed
    */
   protected Task(
-      final int id, final String title, final String description, final TaskStatus status) {
+      final int id,
+      final String title,
+      final String description,
+      final TaskStatus status,
+      final LocalDateTime creationDate,
+      final LocalDateTime updateDate)
+      throws ValidationException, NullPointerException {
     this.id = getValidatedId(id);
     this.title = getValidatedTitle(title);
     this.description = getValidatedDescription(description);
     this.status = getValidatedStatus(status);
+    this.creationDate = getValidatedCreationDate(creationDate);
+    this.updateTime = getValidatedUpdatedTDate(updateDate);
+  }
+
+  /**
+   * Validates the provided LocalDateTime to ensure it is not null.
+   *
+   * @param creationDate the LocalDateTime object to validate
+   * @return the validated LocalDateTime object
+   * @throws NullPointerException if the creationDate is null
+   */
+  private static LocalDateTime getValidatedCreationDate(final LocalDateTime creationDate) {
+    Objects.requireNonNull(creationDate, "Date can be null." + creationDate);
+    return creationDate;
   }
 
   /**
@@ -109,6 +137,41 @@ public abstract sealed class Task permits EpicTask, RegularTask, SubTask {
   }
 
   /**
+   * Validates the provided update date to ensure it is not null and not earlier than the creation
+   * date.
+   *
+   * @param updateDate the update date to validate
+   * @return the validated update date
+   * @throws NullPointerException if the update date is null
+   * @throws ValidationException if the update date is earlier than the creation date
+   */
+  private LocalDateTime getValidatedUpdatedTDate(final LocalDateTime updateDate) {
+    Objects.requireNonNull(updateDate, "Update date can't be null.");
+    if (updateDate.isBefore(this.creationDate)) {
+      throw new ValidationException("The update date can't be before creation date.");
+    }
+    return updateDate;
+  }
+
+  /**
+   * Retrieves the creation date of the task.
+   *
+   * @return the creation date of the task as a {@link LocalDateTime} object
+   */
+  public LocalDateTime getCreationDate() {
+    return creationDate;
+  }
+
+  /**
+   * Retrieves the last update time of the task.
+   *
+   * @return the last update time of the task as a {@link LocalDateTime} object
+   */
+  public LocalDateTime getUpdateDate() {
+    return updateTime;
+  }
+
+  /**
    * Retrieves the ID of the com.tasktracker.task.
    *
    * @return the com.tasktracker.task ID
@@ -170,7 +233,7 @@ public abstract sealed class Task permits EpicTask, RegularTask, SubTask {
 
   /**
    * Returns a string representation of the com.tasktracker.task, including its ID, title,
-   * description, and status.
+   * description, status, creation date, and last update time.
    *
    * @return a string representation of the com.tasktracker.task
    */
@@ -187,6 +250,22 @@ public abstract sealed class Task permits EpicTask, RegularTask, SubTask {
         + '\''
         + ", status="
         + status
+        + ", creationDate="
+        + creationDate
+        + ", updateTime="
+        + updateTime
         + '}';
+  }
+
+  /**
+   * Compares this task with another task based on their creation dates.
+   *
+   * @param o the task to compare to
+   * @return a negative integer, zero, or a positive integer as this task's creation date is earlier
+   *     than, equal to, or later than the specified task's creation date
+   */
+  @Override
+  public int compareTo(Task o) {
+    return this.creationDate.compareTo(o.creationDate);
   }
 }
