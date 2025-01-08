@@ -152,7 +152,15 @@ public class InMemoryTaskManager implements TaskManager {
   public RegularTask addTask(final RegularTaskCreationDTO regularTaskCreationDTO) {
     Objects.requireNonNull(regularTaskCreationDTO, "RegularTaskCreationDTO cannot be null.");
     validateDto(regularTaskCreationDTO, RegularTaskCreationDTO.class);
-    return store.addTask(regularTaskCreationDTO);
+    LocalDateTime currentTime = LocalDateTime.now();
+    return store.addTask(
+        new RegularTask(
+            store.generateId(),
+            regularTaskCreationDTO.title(),
+            regularTaskCreationDTO.description(),
+            TaskStatus.NEW,
+            currentTime,
+            currentTime));
   }
 
   /**
@@ -167,7 +175,16 @@ public class InMemoryTaskManager implements TaskManager {
   public EpicTask addTask(final EpicTaskCreationDTO epicTaskCreationDTO) {
     Objects.requireNonNull(epicTaskCreationDTO, "EpicTaskCreationDTO cannot be null.");
     validateDto(epicTaskCreationDTO, EpicTaskCreationDTO.class);
-    return store.addTask(epicTaskCreationDTO);
+    LocalDateTime currentTime = LocalDateTime.now();
+    return store.addTask(
+        new EpicTask(
+            store.generateId(),
+            epicTaskCreationDTO.title(),
+            epicTaskCreationDTO.description(),
+            TaskStatus.NEW,
+            Set.of(),
+            currentTime,
+            currentTime));
   }
 
   /**
@@ -183,7 +200,17 @@ public class InMemoryTaskManager implements TaskManager {
     Objects.requireNonNull(subTaskCreationDTO, "SubTaskCreationDTO cannot be null.");
     validateDto(subTaskCreationDTO, SubTaskCreationDTO.class);
     EpicTask epicTask = getTaskOrThrowIfInvalid(subTaskCreationDTO.epicId(), EpicTask.class);
-    SubTask subTask = store.addTask(subTaskCreationDTO);
+    LocalDateTime currentTime = LocalDateTime.now();
+    SubTask subTask =
+        store.addTask(
+            new SubTask(
+                store.generateId(),
+                subTaskCreationDTO.title(),
+                subTaskCreationDTO.description(),
+                TaskStatus.NEW,
+                subTaskCreationDTO.epicId(),
+                currentTime,
+                currentTime));
     Set<Integer> updatedSubtaskIds = new HashSet<>(epicTask.getSubtaskIds());
     updatedSubtaskIds.add(subTask.getId());
     store.updateTask(
