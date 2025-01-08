@@ -1,11 +1,5 @@
 package com.tasktracker.task.store;
 
-import com.tasktracker.task.dto.EpicTaskCreationDTO;
-import com.tasktracker.task.dto.RegularTaskCreationDTO;
-import com.tasktracker.task.dto.SubTaskCreationDTO;
-import com.tasktracker.task.model.implementations.EpicTask;
-import com.tasktracker.task.model.implementations.RegularTask;
-import com.tasktracker.task.model.implementations.SubTask;
 import com.tasktracker.task.model.implementations.Task;
 import java.util.Collection;
 import java.util.NoSuchElementException;
@@ -20,37 +14,14 @@ import java.util.function.Predicate;
 public interface TaskRepository {
 
   /**
-   * Adds a new regular com.tasktracker.task to the repository based on the provided {@link
-   * RegularTaskCreationDTO}.
+   * Adds a new task of type {@link Task} or its subclasses to the repository.
    *
-   * @param dto the data transfer object containing details of the regular com.tasktracker.task to
-   *     be created
-   * @return the created {@link RegularTask} with an auto-generated unique ID
-   * @throws NullPointerException if the provided {@code dto} is {@code null}
+   * @param <T> the type of {@link Task} being added
+   * @param task the task to be added to the repository
+   * @return the added task with an auto-generated unique ID
+   * @throws NullPointerException if the provided {@code task} is {@code null}
    */
-  RegularTask addTask(RegularTaskCreationDTO dto);
-
-  /**
-   * Adds a new epic com.tasktracker.task to the repository based on the provided {@link
-   * EpicTaskCreationDTO}.
-   *
-   * @param dto the data transfer object containing details of the epic com.tasktracker.task to be
-   *     created
-   * @return the created {@link EpicTask} with an auto-generated unique ID
-   * @throws NullPointerException if the provided {@code dto} is {@code null}
-   */
-  EpicTask addTask(EpicTaskCreationDTO dto);
-
-  /**
-   * Adds a new sub-com.tasktracker.task to the repository based on the provided {@link
-   * SubTaskCreationDTO}.
-   *
-   * @param dto the data transfer object containing details of the sub-com.tasktracker.task to be
-   *     created
-   * @return the created {@link SubTask} with an auto-generated unique ID
-   * @throws NullPointerException if the provided {@code dto} is {@code null}
-   */
-  SubTask addTask(SubTaskCreationDTO dto);
+  <T extends Task> T addTask(T task);
 
   /**
    * Updates an existing com.tasktracker.task in the repository. Replaces the com.tasktracker.task
@@ -113,4 +84,13 @@ public interface TaskRepository {
    * operation is performed, the repository will be empty. This action is irreversible.
    */
   void clearAllTasks();
+
+  /**
+   * Generates a unique integer ID for new {@link Task} objects in the repository. The ID is
+   * generated as one greater than the highest current ID in the repository. If no tasks exist, the
+   * ID generation starts with 0.
+   *
+   * @return a unique integer ID for a new {@link Task}
+   */
+  int generateId();
 }

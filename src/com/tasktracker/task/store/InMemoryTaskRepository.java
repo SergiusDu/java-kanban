@@ -1,14 +1,6 @@
 package com.tasktracker.task.store;
 
-import com.tasktracker.task.dto.EpicTaskCreationDTO;
-import com.tasktracker.task.dto.RegularTaskCreationDTO;
-import com.tasktracker.task.dto.SubTaskCreationDTO;
-import com.tasktracker.task.model.enums.TaskStatus;
-import com.tasktracker.task.model.implementations.EpicTask;
-import com.tasktracker.task.model.implementations.RegularTask;
-import com.tasktracker.task.model.implementations.SubTask;
 import com.tasktracker.task.model.implementations.Task;
-import java.time.LocalDateTime;
 import java.util.*;
 import java.util.function.Predicate;
 
@@ -19,80 +11,21 @@ import java.util.function.Predicate;
  */
 public final class InMemoryTaskRepository implements TaskRepository {
   public static final String TASK_CAN_T_BE_NULL = "Task can't be null";
-  private final NavigableMap<Integer, Task> taskStore = new TreeMap<>();
+  private final NavigableMap<Integer, Task> store = new TreeMap<>();
 
   /**
-   * Adds a new regular com.tasktracker.task to the repository based on the provided {@link
-   * RegularTaskCreationDTO}.
+   * Adds a new task to the repository. The task must inherit from the {@link Task} class.
    *
-   * @param dto the data transfer object containing details of the regular com.tasktracker.task to
-   *     be created
-   * @return the created {@link RegularTask} with an auto-generated unique ID
-   * @throws NullPointerException if the provided {@code dto} is {@code null}
+   * @param <T> the type of the task being added, which extends {@link Task}
+   * @param task the task to be added to the repository
+   * @return the added task with its current details
+   * @throws NullPointerException if the provided {@code task} is {@code null}
    */
-  public RegularTask addTask(final RegularTaskCreationDTO dto) {
-    Objects.requireNonNull(dto, TASK_CAN_T_BE_NULL);
-    int id = generateId();
-    RegularTask newTask =
-        new RegularTask(
-            id,
-            dto.title(),
-            dto.description(),
-            TaskStatus.NEW,
-            LocalDateTime.now(),
-            LocalDateTime.now());
-    taskStore.put(id, newTask);
-    return newTask;
-  }
-
-  /**
-   * Adds a new epic com.tasktracker.task to the repository based on the provided {@link
-   * EpicTaskCreationDTO}.
-   *
-   * @param dto the data transfer object containing details of the epic com.tasktracker.task to be
-   *     created
-   * @return the created {@link EpicTask} with an auto-generated unique ID
-   * @throws NullPointerException if the provided {@code dto} is {@code null}
-   */
-  public EpicTask addTask(final EpicTaskCreationDTO dto) {
-    Objects.requireNonNull(dto, TASK_CAN_T_BE_NULL);
-    int id = generateId();
-    EpicTask newTask =
-        new EpicTask(
-            id,
-            dto.title(),
-            dto.description(),
-            TaskStatus.NEW,
-            Set.of(),
-            LocalDateTime.now(),
-            LocalDateTime.now());
-    taskStore.put(id, newTask);
-    return newTask;
-  }
-
-  /**
-   * Adds a new sub-com.tasktracker.task to the repository based on the provided {@link
-   * SubTaskCreationDTO}.
-   *
-   * @param dto the data transfer object containing details of the sub-com.tasktracker.task to be
-   *     created
-   * @return the created {@link SubTask} with an auto-generated unique ID
-   * @throws NullPointerException if the provided {@code dto} is {@code null}
-   */
-  public SubTask addTask(final SubTaskCreationDTO dto) {
-    Objects.requireNonNull(dto, TASK_CAN_T_BE_NULL);
-    int id = generateId();
-    SubTask newTask =
-        new SubTask(
-            id,
-            dto.title(),
-            dto.description(),
-            TaskStatus.NEW,
-            dto.epicId(),
-            LocalDateTime.now(),
-            LocalDateTime.now());
-    taskStore.put(id, newTask);
-    return newTask;
+  @Override
+  public <T extends Task> T addTask(final T task) {
+    Objects.requireNonNull(task, TASK_CAN_T_BE_NULL);
+    store.put(task.getId(), task);
+    return task;
   }
 
   /**
@@ -109,7 +42,7 @@ public final class InMemoryTaskRepository implements TaskRepository {
   public Task updateTask(final Task updatedTask) throws NoSuchElementException {
     Objects.requireNonNull(updatedTask, "Updated com.tasktracker.task can't be null");
     checkTaskExists(updatedTask.getId());
-    taskStore.put(updatedTask.getId(), updatedTask);
+    store.put(updatedTask.getId(), updatedTask);
     return updatedTask;
   }
 
@@ -119,7 +52,7 @@ public final class InMemoryTaskRepository implements TaskRepository {
    * @return an unmodifiable {@link Collection} containing all tasks
    */
   public Collection<Task> getAllTasks() {
-    return Collections.unmodifiableCollection(taskStore.values());
+    return Collections.unmodifiableCollection(store.values());
   }
 
   /**
@@ -130,7 +63,7 @@ public final class InMemoryTaskRepository implements TaskRepository {
    *     {@link Optional} if it does not
    */
   public Optional<Task> getTaskById(final int id) {
-    return Optional.ofNullable(taskStore.get(id));
+    return Optional.ofNullable(store.get(id));
   }
 
   /**
@@ -143,7 +76,7 @@ public final class InMemoryTaskRepository implements TaskRepository {
    */
   public Optional<Task> removeTaskById(final int id) {
     checkTaskExists(id);
-    return Optional.ofNullable(taskStore.remove(id));
+    return Optional.ofNullable(store.remove(id));
   }
 
   /**
@@ -154,7 +87,7 @@ public final class InMemoryTaskRepository implements TaskRepository {
    *     if no such tasks exist
    */
   public Collection<Task> findTasksMatching(final Predicate<Task> taskPredicate) {
-    return taskStore.values().stream().filter(taskPredicate).toList();
+    return store.values().stream().filter(taskPredicate).toList();
   }
 
   /**
@@ -164,7 +97,7 @@ public final class InMemoryTaskRepository implements TaskRepository {
    */
   public boolean removeMatchingTasks(final Predicate<Task> taskPredicate) {
     Objects.requireNonNull(taskPredicate);
-    return taskStore.entrySet().removeIf(entry -> taskPredicate.test(entry.getValue()));
+    return store.entrySet().removeIf(entry -> taskPredicate.test(entry.getValue()));
   }
 
   /**
@@ -172,7 +105,7 @@ public final class InMemoryTaskRepository implements TaskRepository {
    * operation is performed, the repository will be empty. This action is irreversible.
    */
   public void clearAllTasks() {
-    taskStore.clear();
+    store.clear();
   }
 
   /**
@@ -182,18 +115,19 @@ public final class InMemoryTaskRepository implements TaskRepository {
    * @throws NoSuchElementException if no com.tasktracker.task with the specified ID exists
    */
   private void checkTaskExists(final int id) throws NoSuchElementException {
-    if (!taskStore.containsKey(id)) {
+    if (!store.containsKey(id)) {
       throw new NoSuchElementException("Task ID" + id + " does not exist.");
     }
   }
 
   /**
-   * Generates a unique integer ID for new tasks. The ID is calculated as one greater than the
-   * highest current key in the repository. If the repository is empty, the ID will start at 0.
+   * Generates a unique integer ID for a new {@link Task}. The ID is calculated as one greater than
+   * the highest current key in the repository. If the repository is empty, the ID will start at 0.
    *
-   * @return a unique integer ID for the new com.tasktracker.task
+   * @return a unique integer ID for the new {@link Task}
    */
-  private int generateId() {
-    return taskStore.isEmpty() ? 0 : taskStore.lastKey() + 1;
+  @Override
+  public int generateId() {
+    return store.isEmpty() ? 0 : store.lastKey() + 1;
   }
 }
