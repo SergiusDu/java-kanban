@@ -24,6 +24,7 @@ import java.util.stream.Collectors;
 public class InMemoryTaskManager implements TaskManager {
   public static final String THE_CLASS_TYPE_CANNOT_BE_NULL = "The class type cannot be null.";
   private final TaskRepository store;
+  private final HistoryManager historyManager;
 
   /**
    * Constructs a TaskManager with the given TaskRepository for storing and managing tasks.
@@ -31,8 +32,9 @@ public class InMemoryTaskManager implements TaskManager {
    * @param store the repository used to store and retrieve tasks
    * @throws NullPointerException if the given repository is null
    */
-  public InMemoryTaskManager(final TaskRepository store) {
+  public InMemoryTaskManager(final TaskRepository store, final HistoryManager historyManager) {
     this.store = Objects.requireNonNull(store, "TaskRepository cannot be null.");
+    this.historyManager = historyManager;
   }
 
   /**
@@ -137,6 +139,7 @@ public class InMemoryTaskManager implements TaskManager {
    */
   @Override
   public Optional<Task> getTaskById(int id) {
+    historyManager.add(id);
     return store.getTaskById(id);
   }
 
