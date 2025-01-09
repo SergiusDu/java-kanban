@@ -21,8 +21,8 @@ public final class SubTask extends Task {
    *     length
    * @param status the current status of the subtask; cannot be null
    * @param epicTaskId the ID of the epic task to which this subtask belongs; must be non-negative
-   * @param creationDate the creation date of the subtask; cannot be null
-   * @param updateDate the last update time of the subtask; cannot be null
+   * @param creationDateTime the creation date of the subtask; cannot be null
+   * @param updateDateTime the last update time of the subtask; cannot be null
    * @throws ValidationException if any validation rules for parameters fail
    * @throws NullPointerException if any parameter is null where not allowed
    */
@@ -32,10 +32,10 @@ public final class SubTask extends Task {
       final String description,
       final TaskStatus status,
       final int epicTaskId,
-      final LocalDateTime creationDate,
-      final LocalDateTime updateDate)
+      final LocalDateTime creationDateTime,
+      final LocalDateTime updateDateTime)
       throws ValidationException, NullPointerException {
-    super(id, title, description, status, creationDate, updateDate);
+    super(id, title, description, status, creationDateTime, updateDateTime);
     this.epicTaskId = getValidEpicTaskId(epicTaskId);
   }
 
@@ -74,10 +74,8 @@ public final class SubTask extends Task {
         + super.getId()
         + ", title='"
         + super.getTitle()
-        + '\''
         + ", description='"
         + super.getDescription()
-        + '\''
         + ", status="
         + super.getStatus()
         + ", epicTaskId="

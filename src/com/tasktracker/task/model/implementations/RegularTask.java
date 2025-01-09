@@ -18,8 +18,8 @@ public final class RegularTask extends Task {
    * @param description the description of the task; cannot be null or shorter than the minimum
    *     required length
    * @param status the current status of the task, as defined in {@link TaskStatus}; cannot be null
-   * @param creationDate the creation date of the task; cannot be null
-   * @param updateDate the last update date of the task; cannot be null
+   * @param creationDateTime the creation date of the task; cannot be null
+   * @param updateDateTime the last update date of the task; cannot be null
    * @throws ValidationException if any input validation fails
    * @throws NullPointerException if any parameter is null
    */
@@ -28,15 +28,15 @@ public final class RegularTask extends Task {
       final String title,
       final String description,
       final TaskStatus status,
-      final LocalDateTime creationDate,
-      final LocalDateTime updateDate)
+      final LocalDateTime creationDateTime,
+      final LocalDateTime updateDateTime)
       throws ValidationException, NullPointerException {
-    super(id, title, description, status, creationDate, updateDate);
+    super(id, title, description, status, creationDateTime, updateDateTime);
   }
 
   /**
-   * Returns a string representation of this RegularTask, including its ID, title, description, and
-   * status.
+   * Returns a string representation of this RegularTask, including its ID, title, description,
+   * status, creation date, and update date.
    *
    * @return a string representation of the com.tasktracker.task
    */
@@ -53,6 +53,10 @@ public final class RegularTask extends Task {
         + '\''
         + ", status="
         + super.getStatus()
+        + ", creationDate="
+        + super.getCreationDate()
+        + ", updateDate="
+        + super.getUpdateDate()
         + '}';
   }
 }
