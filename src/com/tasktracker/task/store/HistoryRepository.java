@@ -1,6 +1,6 @@
 package com.tasktracker.task.store;
 
-import com.tasktracker.task.model.implementations.Task;
+import com.tasktracker.task.model.implementations.TaskView;
 import java.util.Collection;
 import java.util.Optional;
 
@@ -10,19 +10,22 @@ import java.util.Optional;
  */
 public interface HistoryRepository {
   /**
-   * Adds a task to the history repository.
+   * Adds a new task view to the history repository. If the task view is already present, it will
+   * not be added again.
    *
-   * @param task the task to be added
-   * @return {@code true} if the task was successfully added, {@code false} otherwise
+   * @param taskView the task view to be added to the repository
+   * @return {@code true} if the task view was successfully added, {@code false} if it was already
+   *     present
+   * @throws NullPointerException if the provided {@code taskView} is {@code null}
    */
-  boolean add(final Task task);
+  boolean add(TaskView taskView);
 
   /**
    * Retrieves all tasks stored in the history repository.
    *
    * @return a collection containing all tasks in the repository
    */
-  Collection<Task> getAll();
+  Collection<TaskView> getAll();
 
   /**
    * Returns the number of tasks currently stored in the repository.
@@ -32,10 +35,10 @@ public interface HistoryRepository {
   int size();
 
   /**
-   * Retrieves and removes the first task from the repository, if one exists.
+   * Removes and returns the first task from the history repository, if present.
    *
-   * @return an {@code Optional} containing the first task, or an empty {@code Optional} if the
-   *     repository is empty
+   * @return an {@code Optional} containing the first task if it exists, or an empty {@code
+   *     Optional} if the repository is empty
    */
-  Optional<Task> pollFirst();
+  Optional<TaskView> pollLast();
 }

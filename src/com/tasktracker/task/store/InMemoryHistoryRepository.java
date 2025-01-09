@@ -1,6 +1,6 @@
 package com.tasktracker.task.store;
 
-import com.tasktracker.task.model.implementations.Task;
+import com.tasktracker.task.model.implementations.TaskView;
 import java.util.*;
 
 /**
@@ -8,17 +8,20 @@ import java.util.*;
  * stored in a navigable, ordered collection to maintain a defined order.
  */
 public class InMemoryHistoryRepository implements HistoryRepository {
-  private final NavigableSet<Task> store = new TreeSet<>();
+  private final NavigableSet<TaskView> store = new TreeSet<>();
 
   /**
-   * Adds the specified task to the history repository.
+   * Adds a new task view to the history repository. If the task view is already present, it will
+   * not be added again.
    *
-   * @param task the task to be added
-   * @return {@code true} if the task was successfully added, {@code false} otherwise
+   * @param taskView the task view to be added to the repository
+   * @return {@code true} if the task view was successfully added, {@code false} if it was already
+   *     present
+   * @throws NullPointerException if the provided {@code taskView} is {@code null}
    */
   @Override
-  public boolean add(final Task task) {
-    return store.add(task);
+  public boolean add(final TaskView taskView) {
+    return store.add(taskView);
   }
 
   /**
@@ -27,7 +30,7 @@ public class InMemoryHistoryRepository implements HistoryRepository {
    * @return an unmodifiable collection of all tasks in the repository
    */
   @Override
-  public Collection<Task> getAll() {
+  public Collection<TaskView> getAll() {
     return Collections.unmodifiableCollection(store);
   }
 
@@ -42,13 +45,12 @@ public class InMemoryHistoryRepository implements HistoryRepository {
   }
 
   /**
-   * Retrieves and removes the first task in the history repository, if present.
+   * Removes and returns the first task in the history repository if it exists.
    *
-   * @return an {@link Optional} containing the first task, or an empty {@link Optional} if the
-   *     repository is empty
+   * @return an {@code Optional} containing the first task if present, otherwise an empty {@code
+   *     Optional}
    */
-  @Override
-  public Optional<Task> pollFirst() {
-    return Optional.ofNullable(store.pollFirst());
+  public Optional<TaskView> pollLast() {
+    return Optional.ofNullable(store.pollLast());
   }
 }
