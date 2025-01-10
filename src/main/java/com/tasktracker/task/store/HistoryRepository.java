@@ -40,5 +40,5 @@ public interface HistoryRepository {
    * @return an {@code Optional} containing the first task if it exists, or an empty {@code
    *     Optional} if the repository is empty
    */
-  Optional<TaskView> pollLast();
+  Optional<TaskView> pollFirst();
 }
