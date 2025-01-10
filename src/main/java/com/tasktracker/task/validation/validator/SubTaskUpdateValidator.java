@@ -8,6 +8,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class SubTaskUpdateValidator implements Validator<SubTaskUpdateDTO> {
+
   @Override
   public void validate(SubTaskUpdateDTO dto) throws ValidationException {
     List<String> errors = new ArrayList<>();

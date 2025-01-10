@@ -50,7 +50,7 @@ public class InMemoryHistoryRepository implements HistoryRepository {
    * @return an {@code Optional} containing the first task if present, otherwise an empty {@code
    *     Optional}
    */
-  public Optional<TaskView> pollLast() {
-    return Optional.ofNullable(store.pollLast());
+  public Optional<TaskView> pollFirst() {
+    return Optional.ofNullable(store.pollFirst());
   }
 }

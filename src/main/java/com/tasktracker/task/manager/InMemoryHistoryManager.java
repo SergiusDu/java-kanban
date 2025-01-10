@@ -57,7 +57,7 @@ public class InMemoryHistoryManager implements HistoryManager {
   @Override
   public boolean add(final int taskId) {
     if (historyStore.size() == historyLengthLimit) {
-      historyStore.pollLast();
+      historyStore.pollFirst();
     }
     return historyStore.add(new TaskView(taskId, LocalDateTime.now()));
   }
