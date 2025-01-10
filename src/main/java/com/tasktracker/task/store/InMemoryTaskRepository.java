@@ -2,6 +2,7 @@ package com.tasktracker.task.store;
 
 import com.tasktracker.task.model.implementations.Task;
 import java.util.*;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Predicate;
 
 /**
@@ -12,6 +13,7 @@ import java.util.function.Predicate;
 public final class InMemoryTaskRepository implements TaskRepository {
   public static final String TASK_CAN_T_BE_NULL = "Task can't be null";
   private final NavigableMap<Integer, Task> store = new TreeMap<>();
+  private final AtomicInteger index = new AtomicInteger(0);
 
   /**
    * Adds a new task to the repository. The task must inherit from the {@link Task} class.
@@ -121,13 +123,13 @@ public final class InMemoryTaskRepository implements TaskRepository {
   }
 
   /**
-   * Generates a unique integer ID for a new {@link Task}. The ID is calculated as one greater than
-   * the highest current key in the repository. If the repository is empty, the ID will start at 0.
+   * Generates a unique integer ID for a new {@link Task}. The ID is incremented atomically and
+   * guaranteed to be unique across all tasks in the repository. The first ID generated is 1.
    *
    * @return a unique integer ID for the new {@link Task}
    */
   @Override
   public int generateId() {
-    return store.isEmpty() ? 0 : store.lastKey() + 1;
+    return this.index.incrementAndGet();
   }
 }

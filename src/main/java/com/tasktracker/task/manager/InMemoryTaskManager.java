@@ -139,8 +139,9 @@ public class InMemoryTaskManager implements TaskManager {
    */
   @Override
   public Optional<Task> getTaskById(int id) {
-    historyManager.add(id);
-    return store.getTaskById(id);
+    Optional<Task> result = store.getTaskById(id);
+    result.ifPresent(historyManager::add);
+    return result;
   }
 
   /**
@@ -351,7 +352,10 @@ public class InMemoryTaskManager implements TaskManager {
    */
   @Override
   public Collection<Task> getHistory() {
-    return historyManager.getHistory();
+    return historyManager.getHistory().stream()
+        .map(taskView -> store.getTaskById(taskView.getTaskId()))
+        .flatMap(Optional::stream)
+        .toList();
   }
 
   /**

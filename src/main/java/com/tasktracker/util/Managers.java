@@ -28,8 +28,7 @@ public class Managers {
     TaskRepository taskRepository = new InMemoryTaskRepository();
     HistoryRepository historyRepository = new InMemoryHistoryRepository();
     int historyLimit = 10;
-    HistoryManager historyManager =
-        new InMemoryHistoryManager(taskRepository, historyRepository, historyLimit);
+    HistoryManager historyManager = new InMemoryHistoryManager(historyRepository, historyLimit);
     return new InMemoryTaskManager(taskRepository, historyManager);
   }
 }
