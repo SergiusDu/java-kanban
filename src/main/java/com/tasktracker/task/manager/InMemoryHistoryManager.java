@@ -3,10 +3,9 @@ package com.tasktracker.task.manager;
 import com.tasktracker.task.model.implementations.Task;
 import com.tasktracker.task.model.implementations.TaskView;
 import com.tasktracker.task.store.HistoryRepository;
-import com.tasktracker.task.store.TaskRepository;
 import java.time.LocalDateTime;
 import java.util.Collection;
-import java.util.Optional;
+import java.util.Objects;
 
 /**
  * A manager that handles the history of tasks in memory with a defined limit. This implementation
@@ -15,50 +14,64 @@ import java.util.Optional;
  */
 public class InMemoryHistoryManager implements HistoryManager {
   private final HistoryRepository historyStore;
-  private final TaskRepository taskStore;
   private final int historyLengthLimit;
 
   /**
-   * Constructs an {@code InMemoryHistoryManager}.
+   * Creates an instance of {@code InMemoryHistoryManager} to manage task history.
    *
-   * @param historyStore the repository used to store tasks
-   * @param historyLimit the maximum number of tasks allowed in the history
+   * @param historyStore the repository for storing task history; must not be {@code null}
+   * @param historyLengthLimit the maximum number of tasks allowed in the history; must be at least
+   *     1
+   * @throws NullPointerException if {@code historyStore} is {@code null}
+   * @throws IllegalArgumentException if {@code historyLengthLimit} is less than 1
    */
-  public InMemoryHistoryManager(
-      TaskRepository taskStore, final HistoryRepository historyStore, final int historyLimit) {
-    this.taskStore = taskStore;
+  public InMemoryHistoryManager(final HistoryRepository historyStore, final int historyLengthLimit)
+      throws NullPointerException, IllegalArgumentException {
+    Objects.requireNonNull(historyStore, "History Repository can't be null");
     this.historyStore = historyStore;
-    this.historyLengthLimit = historyLimit;
+    this.historyLengthLimit = getValidatedHistoryLimit(historyLengthLimit);
   }
 
   /**
-   * Retrieves the complete history of tasks as a collection of {@link Task} objects. Only tasks
-   * that are still present in the {@link TaskRepository} are included in the result.
+   * Validates the provided history length limit to ensure it is greater than or equal to 1.
    *
-   * @return a collection of {@link Task} objects present in the history and the repository
+   * @param historyLengthLimit the maximum number of tasks allowed in the history
+   * @return the validated history length limit
+   * @throws IllegalArgumentException if the provided limit is less than 1
    */
-  @Override
-  public Collection<Task> getHistory() {
-    return historyStore.getAll().stream()
-        .map(taskView -> taskStore.getTaskById(taskView.getTaskId()))
-        .flatMap(Optional::stream)
-        .toList();
+  private int getValidatedHistoryLimit(int historyLengthLimit) {
+    if (historyLengthLimit < 1) {
+      throw new IllegalArgumentException("History length limit must be at least 1.");
+    }
+    return historyLengthLimit;
   }
 
   /**
-   * Adds a task to the history by its unique identifier. If the history size exceeds the defined
-   * history limit, the oldest task is removed to accommodate the new task. The task is stored in
-   * the {@link HistoryRepository} as a {@link TaskView} object with the current timestamp.
+   * Retrieves the complete history of tasks as a collection of {@link TaskView} objects. This
+   * includes only tasks currently stored in the {@link HistoryRepository}.
    *
-   * @param taskId the unique identifier of the {@link Task} to be added to the history
-   * @return {@code true} if the task was successfully added, or {@code false} if the addition
-   *     failed
+   * @return a collection of {@link TaskView} objects representing the task history
    */
   @Override
-  public boolean add(final int taskId) {
+  public Collection<TaskView> getHistory() {
+    return historyStore.getAll();
+  }
+
+  /**
+   * Adds a task to the history. If the history reaches its maximum allowed size, the oldest task is
+   * removed to make room for the new task. The task is saved in the history as a {@link TaskView}
+   * object with the current timestamp.
+   *
+   * @param task the task to add to the history, must not be {@code null}
+   * @return {@code true} if the task was successfully added, otherwise {@code false}
+   * @throws NullPointerException if the provided task is {@code null}
+   */
+  @Override
+  public boolean add(final Task task) throws NullPointerException {
+    Objects.requireNonNull(task, "Task can't be null.");
     if (historyStore.size() == historyLengthLimit) {
       historyStore.pollFirst();
     }
-    return historyStore.add(new TaskView(taskId, LocalDateTime.now()));
+    return historyStore.add(new TaskView(task.getId(), LocalDateTime.now()));
   }
 }
