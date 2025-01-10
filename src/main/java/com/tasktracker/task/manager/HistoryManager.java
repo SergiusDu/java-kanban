@@ -3,7 +3,6 @@ package com.tasktracker.task.manager;
 import com.tasktracker.task.model.implementations.Task;
 import com.tasktracker.task.model.implementations.TaskView;
 import com.tasktracker.task.store.HistoryRepository;
-import com.tasktracker.task.store.TaskRepository;
 import java.util.Collection;
 
 /**
@@ -13,21 +12,21 @@ import java.util.Collection;
 public interface HistoryManager {
 
   /**
-   * Retrieves the complete history of tasks as a collection of {@link Task} objects. Only tasks
-   * that are still present in the {@link TaskRepository} are included in the result.
+   * Retrieves the complete history of tasks as a collection of {@link TaskView} objects. This
+   * includes only tasks currently stored in the {@link HistoryRepository}.
    *
-   * @return a collection of {@link Task} objects present in the history and the repository
+   * @return a collection of {@link TaskView} objects representing the task history
    */
-  Collection<Task> getHistory();
+  Collection<TaskView> getHistory();
 
   /**
-   * Adds a task to the history by its unique identifier. If the history size exceeds the defined
-   * history limit, the oldest task is removed to accommodate the new task. The task is stored in
-   * the {@link HistoryRepository} as a {@link TaskView} object with the current timestamp.
+   * Adds a task to the history. If the history reaches its maximum allowed size, the oldest task is
+   * removed to make room for the new task. The task is saved in the history as a {@link TaskView}
+   * object with the current timestamp.
    *
-   * @param taskId the unique identifier of the {@link Task} to be added to the history
-   * @return {@code true} if the task was successfully added, or {@code false} if the addition
-   *     failed
+   * @param task the task to add to the history, must not be {@code null}
+   * @return {@code true} if the task was successfully added, otherwise {@code false}
+   * @throws NullPointerException if the provided task is {@code null}
    */
-  boolean add(final int taskId);
+  boolean add(final Task task);
 }

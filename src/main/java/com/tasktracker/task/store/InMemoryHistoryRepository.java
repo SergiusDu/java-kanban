@@ -8,7 +8,7 @@ import java.util.*;
  * stored in a navigable, ordered collection to maintain a defined order.
  */
 public class InMemoryHistoryRepository implements HistoryRepository {
-  private final NavigableSet<TaskView> store = new TreeSet<>();
+  private final LinkedList<TaskView> store = new LinkedList<>();
 
   /**
    * Adds a new task view to the history repository. If the task view is already present, it will
