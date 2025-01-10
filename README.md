@@ -1,81 +1,67 @@
 # Task Tracker Project
 
-This project implements a simple in-memory task tracker application. It allows for the creation, retrieval, update, and
-deletion of three types of tasks: Regular Tasks, Epic Tasks, and Subtasks. The application focuses on maintaining the
-relationships between Epic Tasks and their associated Subtasks, including automatic status updates for Epics based on
-the status of their Subtasks.
+This project implements a simple in-memory task tracker application in Java. It supports three types of tasks: Regular
+Tasks, Epic Tasks, and Subtasks (which belong to Epic Tasks). The project emphasizes clean code, testability, and
+follows best practices for object-oriented design. It includes comprehensive unit tests to ensure correctness and
+robustness.
 
-## Architecture
+## Project Overview
 
-The project follows a layered architecture, promoting separation of concerns and maintainability:
+The Task Tracker application allows users to perform CRUD (Create, Read, Update, Delete) operations on tasks. Epic Tasks
+act as containers for Subtasks, and their status is dynamically calculated based on the status of their constituent
+Subtasks. The application also maintains a history of viewed tasks.
 
-**1. DTO (Data Transfer Objects):**
+## Architectural Approach
 
-* This layer defines simple immutable data structures used for transferring task information between layers. It uses
-  Java records for concise syntax. Examples include `RegularTaskCreationDTO`, `EpicTaskCreationDTO`,
-  `SubTaskCreationDTO`, and their corresponding update DTOs. The `TaskCreationDTO` sealed interface ensures that only
-  the defined record types can implement it, improving type safety.
+The project adopts a layered architecture, promoting separation of concerns and maintainability:
 
-**2. Model:**
+* **Model Layer (`com.tasktracker.task.model`):**  Defines the core data structures representing tasks (Task,
+  RegularTask, EpicTask, SubTask) and task views (TaskView). The `Task` class is an abstract sealed class forming the
+  base for the different task types. The model enforces validation rules to ensure data integrity. Immutable data
+  structures (records) are used where appropriate for DTOs, enhancing thread safety and simplifying code.
+* **Data Transfer Object (DTO) Layer (`com.tasktracker.task.dto`):** Contains DTOs (e.g., `RegularTaskCreationDTO`,
+  `EpicTaskUpdateDTO`) used for transferring data between layers, decoupling the model from external interfaces. A
+  sealed interface `TaskCreationDTO` defines common properties for task creation DTOs, improving type safety and
+  clarity.
+* **Validation Layer (`com.tasktracker.task.validation`):**  Implements validation logic for DTOs using a `Validator`
+  interface and a `ValidatorFactory`. This layer ensures that incoming data meets the required criteria before being
+  processed. Common validation logic is centralized in `CommonValidationUtils`.
+* **Store Layer (`com.tasktracker.task.store`):** Provides interfaces (`TaskRepository`, `HistoryRepository`) and
+  in-memory implementations (`InMemoryTaskRepository`, `InMemoryHistoryRepository`) for persistent storage. The
+  in-memory implementation uses `NavigableMap` and `NavigableSet` for efficient data retrieval and management.
+* **Manager Layer (`com.tasktracker.task.manager`):**  Contains the core application logic.  `TaskManager` interface
+  defines the operations available on tasks. `InMemoryTaskManager` provides an implementation of the TaskManager,
+  handling task creation, updates, deletion, retrieval, and status management.  `HistoryManager` and its in-memory
+  implementation manage the viewing history of tasks, adhering to a configurable history limit.
+* **Utility Layer (`com.tasktracker.util`):**  Contains utility classes like `TypeSafeCaster` for type-safe casting and
+  `Managers` for providing default configurations of managers. This layer helps keep other layers focused on their core
+  responsibilities.
+* **Main Application (`com.tasktracker.Main`):** Demonstrates the usage of the Task Tracker application through a series
+  of test scenarios.
 
-* Contains the core domain objects representing tasks. The `Task` class is an abstract sealed class, serving as the base
-  for concrete task types: `RegularTask`, `EpicTask`, and `SubTask`. This design enforces a closed hierarchy of task
-  types. The `TaskStatus` enum defines the possible states a task can be in (NEW, IN_PROGRESS, DONE). Validation logic
-  related to task properties (e.g., title length, description length) is encapsulated within the model classes.
+## Key Features and Design Choices
 
-**3. Manager:**
+* **In-Memory Storage:**  The current implementation uses in-memory storage. The `TaskRepository` and
+  `HistoryRepository` interfaces are designed to allow for easy replacement with other storage mechanisms (e.g.,
+  database persistence) in the future.
+* **History Management:** The `HistoryManager` keeps track of recently accessed tasks using a doubly linked list
+  implementation, ensuring efficient addition and removal while respecting the history size limit.
+* **Epic Task Status Calculation:**  The status of an Epic Task is automatically updated whenever a Subtask's status
+  changes, ensuring data consistency.
+* **Validation:**  Input validation is performed using a dedicated validation layer, preventing invalid data from
+  corrupting the application state.
+* **Unit Testing:** Extensive unit tests cover all core functionalities and edge cases, ensuring code quality and
+  reliability. JUnit 5 is used for testing.
+* **Clear Exception Handling:**  Exceptions are used to signal errors and exceptional conditions, aiding in debugging
+  and troubleshooting. A custom `ValidationException` is used to handle data validation errors, providing detailed error
+  messages.
+* **Atomic Operations:**  The code utilizes atomic operations where appropriate (e.g., updating the task store) to
+  enhance thread safety, although the current application is single-threaded.
 
-* The `TaskManager` class provides the business logic for managing tasks. It interacts with the `TaskRepository` for
-  persistence operations. It handles the creation, retrieval, updating, and deletion of tasks, including the management
-  of Epic-Subtask relationships and automatic Epic status updates. The `TaskManager` also leverages the validation layer
-  to ensure data integrity before interacting with the repository.
+## Future Enhancements
 
-**4. Store/Repository:**
-
-* The `TaskRepository` interface defines the contract for data access. The `InMemoryTaskRepository` provides an
-  in-memory implementation using a `TreeMap` for efficient storage and retrieval of tasks by ID. This allows for quick
-  prototyping and testing without requiring a persistent database.
-
-**5. Validation:**
-
-* The validation layer ensures data integrity. It uses a `Validator` interface and a `ValidatorFactory` to provide
-  specific validators for each DTO type. The `CommonValidationUtils` class houses common validation logic (e.g., minimum
-  title and description lengths). This design allows for easy extension with new validation rules and keeps validation
-  logic separate from the core business logic.
-
-**6. Util:**
-
-* Contains utility classes for common operations. The `TypeSafeCaster` provides helper methods for safe casting of
-  objects and Optionals, improving type safety and handling potential `ClassCastException` scenarios gracefully.
-
-**7. Main:**
-
-* The `Main` class contains a series of test methods demonstrating the functionality of the task tracker. These tests
-  cover basic CRUD operations, Epic-Subtask interactions, task removal, status updates, and boundary case handling.
-
-## Dependencies
-
-The project currently has no external dependencies beyond the Java standard library.
-
-## Build and Run
-
-This project can be built and run using a standard Java development environment (e.g., IntelliJ IDEA, Eclipse). Simply
-compile the Java source files and run the `Main` class.
-
-## Future Improvements
-
-* **Persistence:** Implement a persistent `TaskRepository` using a database (e.g., PostgreSQL, MySQL) to store tasks
-  beyond the application's lifecycle.
-* **Serialization:** Add serialization/deserialization capabilities (e.g., using JSON) to save and load tasks from
-  files.
-* **User Interface:** Develop a user interface (e.g., command-line, web-based) to interact with the task tracker.
-* **Search and Filtering:** Implement search functionality and filtering options to manage larger collections of tasks.
-* **History Tracking:**  Track changes to tasks over time, allowing for reverting to previous versions.
-* **Prioritization:** Add task prioritization to allow for ordering tasks within an Epic or globally.
-* **Due Dates:**  Incorporate due dates for tasks and reminders.
-
-## Conclusion
-
-This project provides a solid foundation for a task tracker application. Its layered architecture and focus on type
-safety and validation make it maintainable and extensible. The provided test cases demonstrate the core functionality
-and serve as a starting point for further development.
+* **Persistence:** Implement persistent storage using a database or file system.
+* **User Interface:**  Develop a user interface (e.g., command-line, web-based) for interacting with the Task Tracker.
+* **Task Dependencies:**  Introduce the ability to define dependencies between tasks.
+* **Prioritization:** Allow users to prioritize tasks.
+* **Search and Filtering:** Implement more sophisticated search and filtering capabilities.
