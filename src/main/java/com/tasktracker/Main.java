@@ -5,19 +5,13 @@ import com.tasktracker.task.dto.RegularTaskCreationDTO;
 import com.tasktracker.task.dto.RegularTaskUpdateDTO;
 import com.tasktracker.task.dto.SubTaskCreationDTO;
 import com.tasktracker.task.dto.SubTaskUpdateDTO;
-import com.tasktracker.task.manager.HistoryManager;
-import com.tasktracker.task.manager.InMemoryHistoryManager;
-import com.tasktracker.task.manager.InMemoryTaskManager;
 import com.tasktracker.task.manager.TaskManager;
 import com.tasktracker.task.model.enums.TaskStatus;
 import com.tasktracker.task.model.implementations.EpicTask;
 import com.tasktracker.task.model.implementations.RegularTask;
 import com.tasktracker.task.model.implementations.SubTask;
 import com.tasktracker.task.model.implementations.Task;
-import com.tasktracker.task.store.HistoryRepository;
-import com.tasktracker.task.store.InMemoryHistoryRepository;
-import com.tasktracker.task.store.InMemoryTaskRepository;
-import com.tasktracker.task.store.TaskRepository;
+import com.tasktracker.util.Managers;
 import java.util.Optional;
 
 public class Main {
@@ -34,10 +28,7 @@ public class Main {
   /** Basic CRUD operations: creation, reading, updating, printing. */
   private static void testBasicCrudOperations() {
     System.out.println("===== testBasicCrudOperations =====");
-    TaskRepository tr = new InMemoryTaskRepository();
-    HistoryRepository hr = new InMemoryHistoryRepository();
-    HistoryManager hm = new InMemoryHistoryManager(tr, hr, 10);
-    TaskManager tm = new InMemoryTaskManager(tr, hm);
+    TaskManager tm = Managers.getDefault();
 
     // Create two regular tasks
     RegularTask regTask1 =
@@ -88,10 +79,7 @@ public class Main {
   /** Additional epic scenarios: multiple subtasks, updates, and validations. */
   private static void testAdditionalEpicScenarios() {
     System.out.println("===== testAdditionalEpicScenarios =====");
-    TaskRepository tr = new InMemoryTaskRepository();
-    HistoryRepository hr = new InMemoryHistoryRepository();
-    HistoryManager hm = new InMemoryHistoryManager(tr, hr, 10);
-    TaskManager tm = new InMemoryTaskManager(tr, hm);
+    TaskManager tm = Managers.getDefault();
 
     EpicTask epicA =
         tm.addTask(new EpicTaskCreationDTO("Epic A Title Enough", "Epic A Description Enough"));
@@ -134,10 +122,7 @@ public class Main {
   /** Removing tasks one by one, including repeated deletions. */
   private static void testRemovingTasks() {
     System.out.println("===== testRemovingTasks =====");
-    TaskRepository tr = new InMemoryTaskRepository();
-    HistoryRepository hr = new InMemoryHistoryRepository();
-    HistoryManager hm = new InMemoryHistoryManager(tr, hr, 10);
-    TaskManager tm = new InMemoryTaskManager(tr, hm);
+    TaskManager tm = Managers.getDefault();
 
     // Create a regular task
     RegularTask regTaskA =
@@ -184,10 +169,7 @@ public class Main {
   /** Update epic and subtask statuses, ensuring epic status is recalculated properly. */
   private static void testUpdateEpicAndSubtaskStatus() {
     System.out.println("===== testUpdateEpicAndSubtaskStatus =====");
-    TaskRepository tr = new InMemoryTaskRepository();
-    HistoryRepository hr = new InMemoryHistoryRepository();
-    HistoryManager hm = new InMemoryHistoryManager(tr, hr, 10);
-    TaskManager tm = new InMemoryTaskManager(tr, hm);
+    TaskManager tm = Managers.getDefault();
 
     EpicTask epicB =
         tm.addTask(new EpicTaskCreationDTO("EpicB Title Enough", "EpicB Description Enough"));
@@ -232,10 +214,7 @@ public class Main {
   /** Removing tasks by class type. */
   private static void testRemoveTasksByType() {
     System.out.println("===== testRemoveTasksByType =====");
-    TaskRepository tr = new InMemoryTaskRepository();
-    HistoryRepository hr = new InMemoryHistoryRepository();
-    HistoryManager hm = new InMemoryHistoryManager(tr, hr, 10);
-    TaskManager tm = new InMemoryTaskManager(tr, hm);
+    TaskManager tm = Managers.getDefault();
 
     // Create multiple tasks of different types
     RegularTask reg1 =
@@ -277,10 +256,7 @@ public class Main {
    */
   private static void testBoundaryCases() {
     System.out.println("===== testBoundaryCases =====");
-    TaskRepository tr = new InMemoryTaskRepository();
-    HistoryRepository hr = new InMemoryHistoryRepository();
-    HistoryManager hm = new InMemoryHistoryManager(tr, hr, 10);
-    TaskManager tm = new InMemoryTaskManager(tr, hm);
+    TaskManager tm = Managers.getDefault();
 
     // Valid tasks
     RegularTask regValid =
