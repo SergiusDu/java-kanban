@@ -6,6 +6,7 @@ import com.tasktracker.task.model.implementations.EpicTask;
 import com.tasktracker.task.model.implementations.RegularTask;
 import com.tasktracker.task.model.implementations.SubTask;
 import com.tasktracker.task.model.implementations.Task;
+import com.tasktracker.task.store.TaskRepository;
 import java.util.Collection;
 import java.util.Optional;
 
@@ -135,4 +136,12 @@ public interface TaskManager {
    * @throws NullPointerException if the specified class type is null
    */
   <T extends Task> Collection<T> getAllTasksByClass(Class<T> targetClass);
+
+  /**
+   * Retrieves the complete history of tasks as a collection of {@link Task} objects. Only tasks
+   * that are still present in the {@link TaskRepository} are included in the result.
+   *
+   * @return a collection of {@link Task} objects present in the history and the repository
+   */
+  Collection<Task> getHistory();
 }

@@ -344,6 +344,17 @@ public class InMemoryTaskManager implements TaskManager {
   }
 
   /**
+   * Retrieves the complete history of tasks as a collection of {@link Task} objects. Only tasks
+   * that are still present in the {@link TaskRepository} are included in the result.
+   *
+   * @return a collection of {@link Task} objects present in the history and the repository
+   */
+  @Override
+  public Collection<Task> getHistory() {
+    return historyManager.getHistory();
+  }
+
+  /**
    * Retrieves a com.tasktracker.task by its ID and ensures it matches the specified class type.
    *
    * @param taskId the ID of the com.tasktracker.task to retrieve
