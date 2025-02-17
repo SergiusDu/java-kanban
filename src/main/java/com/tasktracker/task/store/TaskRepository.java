@@ -59,7 +59,7 @@ public interface TaskRepository {
    *     Optional} if no com.tasktracker.task was found for the given ID
    * @throws IllegalArgumentException if no com.tasktracker.task exists for the specified ID
    */
-  Optional<Task> removeTaskById(int id);
+  Optional<Task> removeTask(int id);
 
   /**
    * Finds tasks that match the given {@link Predicate} criteria.

@@ -76,7 +76,7 @@ public class InMemoryTaskManager implements TaskManager {
           .map(
               subTask -> {
                 removeSubTaskFromEpic(subTask.getEpicTaskId(), subTask.getId());
-                return store.removeTaskById(subTask.getId());
+                return removeTaskFromStores(subTask.getId());
               })
           .allMatch(Optional::isPresent);
     } else if (clazz == EpicTask.class) {
@@ -84,8 +84,8 @@ public class InMemoryTaskManager implements TaskManager {
           .map(EpicTask.class::cast)
           .map(
               epicTask -> {
-                epicTask.getSubtaskIds().forEach(store::removeTaskById);
-                return store.removeTaskById(epicTask.getId());
+                epicTask.getSubtaskIds().forEach(store::removeTask);
+                return removeTaskFromStores(epicTask.getId());
               })
           .allMatch(Optional::isPresent);
     } else {
@@ -113,21 +113,26 @@ public class InMemoryTaskManager implements TaskManager {
     Task taskToDelete = optionalTask.get();
     switch (taskToDelete) {
       case RegularTask regularTask -> {
-        return store.removeTaskById(regularTask.getId());
+        return removeTaskFromStores(regularTask.getId());
       }
       case SubTask subTask -> {
         removeSubTaskFromEpic(subTask.getEpicTaskId(), subTask.getId());
         updateEpicTaskStatus(getTaskOrThrowIfInvalid(subTask.getEpicTaskId(), EpicTask.class));
-        return store.removeTaskById(subTask.getId());
+        return removeTaskFromStores(subTask.getId());
       }
       case EpicTask epicTask -> {
-        epicTask.getSubtaskIds().forEach(store::removeTaskById);
-        return store.removeTaskById(epicTask.getId());
+        epicTask.getSubtaskIds().forEach(this::removeTaskFromStores);
+        return removeTaskFromStores(epicTask.getId());
       }
       default ->
           throw new UnsupportedOperationException(
               "Unknown com.tasktracker.task type: " + taskToDelete.getClass().getName());
     }
+  }
+
+  private Optional<Task> removeTaskFromStores(int id) {
+    historyManager.remove(id);
+    return store.removeTask(id);
   }
 
   /**
@@ -138,9 +143,9 @@ public class InMemoryTaskManager implements TaskManager {
    *     Optional if not
    */
   @Override
-  public Optional<Task> getTaskById(int id) {
+  public Optional<Task> getTask(int id) {
     Optional<Task> result = store.getTaskById(id);
-    result.ifPresent(historyManager::add);
+    result.ifPresent(historyManager::put);
     return result;
   }
 

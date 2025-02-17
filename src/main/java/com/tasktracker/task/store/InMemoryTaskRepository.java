@@ -76,7 +76,7 @@ public final class InMemoryTaskRepository implements TaskRepository {
    *     Optional} if no com.tasktracker.task was found for the given ID
    * @throws IllegalArgumentException if no com.tasktracker.task exists for the specified ID
    */
-  public Optional<Task> removeTaskById(final int id) {
+  public Optional<Task> removeTask(final int id) {
     checkTaskExists(id);
     return Optional.ofNullable(store.remove(id));
   }

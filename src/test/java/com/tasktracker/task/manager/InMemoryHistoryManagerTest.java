@@ -12,6 +12,7 @@ import com.tasktracker.task.store.InMemoryTaskRepository;
 import com.tasktracker.task.store.TaskRepository;
 import java.time.LocalDateTime;
 import java.util.Collection;
+import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -20,30 +21,21 @@ class InMemoryHistoryManagerTest {
 
   private static final String VALID_TITLE = "ValidTaskTitleX";
   private static final String VALID_DESCRIPTION = "ValidTaskDescrX";
-  private static final int HISTORY_LIMIT = 3;
 
-  private HistoryRepository historyRepository;
   private TaskRepository taskRepository;
   private InMemoryHistoryManager historyManager;
 
   @BeforeEach
   void init() {
-    historyRepository = new InMemoryHistoryRepository();
+    HistoryRepository historyRepository = new InMemoryHistoryRepository();
     taskRepository = new InMemoryTaskRepository();
-    historyManager = new InMemoryHistoryManager(historyRepository, HISTORY_LIMIT);
+    historyManager = new InMemoryHistoryManager(historyRepository);
   }
 
   @Test
   @DisplayName("Should throw NullPointerException when historyStore is null in constructor")
   void shouldThrowExceptionForNullHistoryStore() {
-    assertThrows(NullPointerException.class, () -> new InMemoryHistoryManager(null, HISTORY_LIMIT));
-  }
-
-  @Test
-  @DisplayName("Should throw IllegalArgumentException when history limit is below 1")
-  void shouldThrowExceptionForInvalidHistoryLimit() {
-    assertThrows(
-        IllegalArgumentException.class, () -> new InMemoryHistoryManager(historyRepository, 0));
+    assertThrows(NullPointerException.class, () -> new InMemoryHistoryManager(null));
   }
 
   @Test
@@ -56,7 +48,7 @@ class InMemoryHistoryManagerTest {
   @Test
   @DisplayName("Should throw NullPointerException when adding a null task")
   void shouldThrowExceptionWhenAddingNullTask() {
-    assertThrows(NullPointerException.class, () -> historyManager.add(null));
+    assertThrows(NullPointerException.class, () -> historyManager.put(null));
   }
 
   @Test
@@ -72,81 +64,12 @@ class InMemoryHistoryManagerTest {
             LocalDateTime.now(),
             LocalDateTime.now());
     taskRepository.addTask(task);
-    boolean added = historyManager.add(task);
+    Optional<TaskView> added = historyManager.put(task);
     Collection<TaskView> history = historyManager.getHistory();
-    assertTrue(added);
+    assertNotNull(added);
     assertEquals(1, history.size());
     TaskView view = history.iterator().next();
     assertEquals(generatedId, view.getTaskId());
-  }
-
-  @Test
-  @DisplayName("Should remove the oldest entry when the limit is exceeded")
-  void shouldRemoveOldestWhenLimitIsReached() {
-    Task t1 =
-        taskRepository.addTask(
-            new RegularTask(
-                taskRepository.generateId(),
-                "TaskOneTitleZ",
-                "TaskOneDescrZ",
-                TaskStatus.NEW,
-                LocalDateTime.now(),
-                LocalDateTime.now()));
-    Task t2 =
-        taskRepository.addTask(
-            new RegularTask(
-                taskRepository.generateId(),
-                "TaskTwoTitleZ",
-                "TaskTwoDescrZ",
-                TaskStatus.NEW,
-                LocalDateTime.now(),
-                LocalDateTime.now()));
-    Task t3 =
-        taskRepository.addTask(
-            new RegularTask(
-                taskRepository.generateId(),
-                "TaskThreeTTLZ",
-                "TaskThreeDSCZ",
-                TaskStatus.NEW,
-                LocalDateTime.now(),
-                LocalDateTime.now()));
-    Task t4 =
-        taskRepository.addTask(
-            new RegularTask(
-                taskRepository.generateId(),
-                "TaskFourTitle",
-                "TaskFourDescrip",
-                TaskStatus.NEW,
-                LocalDateTime.now(),
-                LocalDateTime.now()));
-    historyManager.add(t1);
-    historyManager.add(t2);
-    historyManager.add(t3);
-    assertEquals(HISTORY_LIMIT, historyManager.getHistory().size());
-    historyManager.add(t4);
-    Collection<TaskView> history = historyManager.getHistory();
-    assertEquals(HISTORY_LIMIT, history.size());
-    assertFalse(history.stream().anyMatch(v -> v.getTaskId() == t1.getId()));
-    assertTrue(history.stream().anyMatch(v -> v.getTaskId() == t4.getId()));
-  }
-
-  @Test
-  @DisplayName("Should keep adding tasks rapidly without exceeding the limit")
-  void shouldNotExceedLimitOnRapidAdd() {
-    for (int i = 0; i < 5; i++) {
-      Task task =
-          new RegularTask(
-              taskRepository.generateId(),
-              "RapidAddTitle" + i,
-              "RapidAddDescrip" + i,
-              TaskStatus.NEW,
-              LocalDateTime.now(),
-              LocalDateTime.now());
-      taskRepository.addTask(task);
-      historyManager.add(task);
-    }
-    Collection<TaskView> history = historyManager.getHistory();
-    assertEquals(HISTORY_LIMIT, history.size());
   }
 
   @Test
@@ -179,12 +102,174 @@ class InMemoryHistoryManagerTest {
                 TaskStatus.NEW,
                 LocalDateTime.now(),
                 LocalDateTime.now()));
-    historyManager.add(t1);
-    historyManager.add(t2);
-    historyManager.add(t3);
+    historyManager.put(t1);
+    historyManager.put(t2);
+    historyManager.put(t3);
     TaskView[] items = historyManager.getHistory().toArray(TaskView[]::new);
     assertEquals(t1.getId(), items[0].getTaskId());
     assertEquals(t2.getId(), items[1].getTaskId());
     assertEquals(t3.getId(), items[2].getTaskId());
+  }
+
+  @Test
+  @DisplayName("Should contain task history")
+  void shouldDisplayTaskHistory() {
+    Task t1 =
+        taskRepository.addTask(
+            new RegularTask(
+                taskRepository.generateId(),
+                "FirstTaskTitle",
+                "FirstTaskDescrip",
+                TaskStatus.NEW,
+                LocalDateTime.now(),
+                LocalDateTime.now()));
+    Task t2 =
+        taskRepository.addTask(
+            new RegularTask(
+                taskRepository.generateId(),
+                "SecondTaskTTL",
+                "SecondTaskDSC",
+                TaskStatus.NEW,
+                LocalDateTime.now(),
+                LocalDateTime.now()));
+    Task t3 =
+        taskRepository.addTask(
+            new RegularTask(
+                taskRepository.generateId(),
+                "ThirdTaskTitle",
+                "ThirdTaskDescrip",
+                TaskStatus.NEW,
+                LocalDateTime.now(),
+                LocalDateTime.now()));
+    historyManager.put(t1);
+    historyManager.put(t2);
+    historyManager.put(t3);
+    Collection<TaskView> taskHistory = historyManager.getHistory();
+    assertEquals(3, taskHistory.size());
+  }
+
+  @Test
+  @DisplayName("Should contain only unique tasks in history")
+  void shouldDeisplayOnlyUniqueTasksInHistory() {
+    Task t1 =
+        taskRepository.addTask(
+            new RegularTask(
+                taskRepository.generateId(),
+                "FirstTaskTitle",
+                "FirstTaskDescrip",
+                TaskStatus.NEW,
+                LocalDateTime.now(),
+                LocalDateTime.now()));
+    Task t2 =
+        taskRepository.addTask(
+            new RegularTask(
+                taskRepository.generateId(),
+                "SecondTaskTTL",
+                "SecondTaskDSC",
+                TaskStatus.NEW,
+                LocalDateTime.now(),
+                LocalDateTime.now()));
+    historyManager.put(t1);
+    historyManager.put(t1);
+    historyManager.put(t2);
+    Collection<TaskView> taskHistory = historyManager.getHistory();
+    assertEquals(2, taskHistory.size());
+  }
+
+  @Test
+  @DisplayName("Should add task in historyManager")
+  void put() {
+    Task t1 =
+        taskRepository.addTask(
+            new RegularTask(
+                taskRepository.generateId(),
+                "FirstTaskTitle",
+                "FirstTaskDescrip",
+                TaskStatus.NEW,
+                LocalDateTime.now(),
+                LocalDateTime.now()));
+    historyManager.put(t1);
+    Collection<TaskView> taskHistory = historyManager.getHistory();
+    assertEquals(1, taskHistory.size());
+  }
+
+  @DisplayName("Should remove TaskView by ID")
+  @Test
+  void shouldRemoveTaskViewById() {
+    Task t1 =
+        taskRepository.addTask(
+            new RegularTask(
+                taskRepository.generateId(),
+                "FirstTaskTitle",
+                "FirstTaskDescrip",
+                TaskStatus.NEW,
+                LocalDateTime.now(),
+                LocalDateTime.now()));
+    historyManager.put(t1);
+    historyManager.remove(t1.getId());
+    assertEquals(0, historyManager.getHistory().size());
+  }
+
+  @DisplayName("Should return Optional Empty when task not removed")
+  @Test
+  void shouldReturnOptionalWhenTaskNotRemoved() {
+    assertInstanceOf(Optional.class, historyManager.remove(0));
+    assertTrue(historyManager.remove(0).isEmpty());
+  }
+
+  @DisplayName("Should return TaskView when task is removed from history")
+  @Test
+  void shouldReturnTaskViewWhenTaskRemovedFromHistory() {
+    Task t1 =
+        taskRepository.addTask(
+            new RegularTask(
+                taskRepository.generateId(),
+                "FirstTaskTitle",
+                "FirstTaskDescrip",
+                TaskStatus.NEW,
+                LocalDateTime.now(),
+                LocalDateTime.now()));
+    historyManager.put(t1);
+    Optional<TaskView> removedT1 = historyManager.remove(t1.getId());
+    assertTrue(removedT1.isPresent());
+    assertEquals(t1.getId(), removedT1.get().getTaskId());
+  }
+
+  @Test
+  void shouldMaintainCorrectHistoryOrder() {
+    Task t1 =
+        taskRepository.addTask(
+            new RegularTask(
+                taskRepository.generateId(),
+                "FirstTaskTitle",
+                "FirstTaskDescrip",
+                TaskStatus.NEW,
+                LocalDateTime.now(),
+                LocalDateTime.now()));
+    Task t2 =
+        taskRepository.addTask(
+            new RegularTask(
+                taskRepository.generateId(),
+                "FirstTaskTitle",
+                "FirstTaskDescrip",
+                TaskStatus.NEW,
+                LocalDateTime.now(),
+                LocalDateTime.now()));
+    Task t3 =
+        taskRepository.addTask(
+            new RegularTask(
+                taskRepository.generateId(),
+                "FirstTaskTitle",
+                "FirstTaskDescrip",
+                TaskStatus.NEW,
+                LocalDateTime.now(),
+                LocalDateTime.now()));
+    historyManager.put(t1);
+    historyManager.put(t2);
+    historyManager.put(t3);
+    System.out.println(historyManager.put(t2));
+    Collection<TaskView> history = historyManager.getHistory();
+    assertEquals(3, history.size());
+    System.out.println(historyManager.getHistory());
   }
 }

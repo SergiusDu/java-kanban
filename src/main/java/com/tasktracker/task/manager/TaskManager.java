@@ -55,7 +55,7 @@ public interface TaskManager {
    * @return an {@link Optional} containing the com.tasktracker.task if it exists, or an empty
    *     Optional if not
    */
-  Optional<Task> getTaskById(int id);
+  Optional<Task> getTask(int id);
 
   /**
    * Creates and adds a new Regular Task to the repository.

@@ -154,11 +154,11 @@ class InMemoryTaskRepositoryTest {
 
   @Test
   @DisplayName("Should remove a task by ID and return it")
-  void testRemoveTaskByIdValid() {
+  void testRemoveTaskValid() {
     RegularTask saved = createAndStoreTask("RemoveTaskXXXX", "RemoveDescrXXXX", TaskStatus.NEW);
     int assignedId = saved.getId();
 
-    Optional<Task> removed = repository.removeTaskById(assignedId);
+    Optional<Task> removed = repository.removeTask(assignedId);
     assertTrue(removed.isPresent(), "Should return the removed task");
     assertEquals(assignedId, removed.get().getId(), "Removed task ID should match");
     assertTrue(
@@ -167,10 +167,10 @@ class InMemoryTaskRepositoryTest {
 
   @Test
   @DisplayName("Should throw NoSuchElementException when removing a non-existent ID")
-  void testRemoveTaskByIdNonExistent() {
+  void testRemoveTaskNonExistent() {
     assertThrows(
         NoSuchElementException.class,
-        () -> repository.removeTaskById(12345),
+        () -> repository.removeTask(12345),
         "Removing a non-existent ID should throw NoSuchElementException");
   }
 

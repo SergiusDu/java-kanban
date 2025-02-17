@@ -8,49 +8,45 @@ import java.util.*;
  * stored in a navigable, ordered collection to maintain a defined order.
  */
 public class InMemoryHistoryRepository implements HistoryRepository {
-  private final LinkedList<TaskView> store = new LinkedList<>();
+  private static final int INITIAL_CAPACITY = 16;
+  private static final float LOAD_FACTOR = 0.75f;
+  private final LinkedHashMap<Integer, TaskView> store =
+      new LinkedHashMap<>(INITIAL_CAPACITY, LOAD_FACTOR, true);
 
   /**
-   * Adds a new task view to the history repository. If the task view is already present, it will
-   * not be added again.
+   * Adds a new task view to the history repository, replacing any existing task view with the same
+   * ID.
    *
    * @param taskView the task view to be added to the repository
-   * @return {@code true} if the task view was successfully added, {@code false} if it was already
-   *     present
+   * @return an {@link Optional} containing the previous {@link TaskView} if one was replaced, or an
+   *     empty {@link Optional} if no task view with the same ID existed
    * @throws NullPointerException if the provided {@code taskView} is {@code null}
    */
   @Override
-  public boolean add(final TaskView taskView) {
-    return store.add(taskView);
+  public Optional<TaskView> put(final TaskView taskView) {
+    return Optional.ofNullable(store.put(taskView.getTaskId(), taskView));
   }
 
   /**
-   * Retrieves all tasks stored in the history repository.
+   * Retrieves all task views stored in the history repository as a collection of map entries. Each
+   * entry consists of the task ID as the key and its corresponding {@link TaskView} as the value.
    *
-   * @return an unmodifiable collection of all tasks in the repository
+   * @return an unmodifiable collection of map entries containing all task views in the repository
    */
   @Override
   public Collection<TaskView> getAll() {
-    return Collections.unmodifiableCollection(store);
+    return Collections.unmodifiableCollection(store.values());
   }
 
   /**
-   * Returns the number of tasks currently in the history repository.
+   * Removes a task view from the history repository by its ID, if it exists.
    *
-   * @return the size of the task repository
+   * @param id the ID of the task view to be removed
+   * @return an {@link Optional} containing the removed {@link TaskView} if found, or an empty
+   *     {@link Optional} if no task view with the given ID exists
    */
   @Override
-  public int size() {
-    return store.size();
-  }
-
-  /**
-   * Removes and returns the first task in the history repository if it exists.
-   *
-   * @return an {@code Optional} containing the first task if present, otherwise an empty {@code
-   *     Optional}
-   */
-  public Optional<TaskView> pollFirst() {
-    return Optional.ofNullable(store.pollFirst());
+  public Optional<TaskView> remove(int id) {
+    return Optional.ofNullable(store.remove(id));
   }
 }

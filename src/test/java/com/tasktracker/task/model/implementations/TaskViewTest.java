@@ -14,21 +14,10 @@ class TaskViewTest {
     int taskId = 1;
     LocalDateTime viewTime = LocalDateTime.now();
     TaskView taskView = new TaskView(taskId, viewTime);
-
-    assertNotNull(taskView.getViewId());
     assertEquals(taskId, taskView.getTaskId());
     assertEquals(viewTime, taskView.getViewDateTime());
   }
 
-  @Test
-  @DisplayName("getViewId should return the correct UUID")
-  void getViewId() {
-    int taskId = 2;
-    LocalDateTime viewTime = LocalDateTime.now();
-    TaskView taskView = new TaskView(taskId, viewTime);
-
-    assertNotNull(taskView.getViewId());
-  }
 
   @Test
   @DisplayName("getViewDateTime should return the correct viewDateTime")
@@ -115,9 +104,9 @@ class TaskViewTest {
     TaskView taskView2 = new TaskView(11, viewTime);
 
     assertNotEquals(
-        taskView1.getViewId(),
-        taskView2.getViewId(),
-        "Different TaskViews should have different UUIDs");
+        taskView1.getTaskId(),
+        taskView2.getTaskId(),
+        "Different TaskViews should have different TaskIDs");
     assertNotEquals(
         0, taskView1.compareTo(taskView2), "Different TaskViews should not be equal in compareTo");
   }
