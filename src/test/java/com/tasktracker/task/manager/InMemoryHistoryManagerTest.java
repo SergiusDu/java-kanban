@@ -267,7 +267,7 @@ class InMemoryHistoryManagerTest {
     historyManager.put(t1);
     historyManager.put(t2);
     historyManager.put(t3);
-    System.out.println(historyManager.put(t2));
+    historyManager.put(t2);
     Collection<TaskView> history = historyManager.getHistory();
     assertEquals(3, history.size());
     System.out.println(historyManager.getHistory());

@@ -4,9 +4,7 @@ import com.tasktracker.task.model.implementations.Task;
 import com.tasktracker.task.model.implementations.TaskView;
 import com.tasktracker.task.store.HistoryRepository;
 import java.time.LocalDateTime;
-import java.util.Collection;
-import java.util.Objects;
-import java.util.Optional;
+import java.util.*;
 
 /**
  * A manager implementation that handles task history in memory. It uses a {@link HistoryRepository}

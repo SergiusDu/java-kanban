@@ -1,5 +1,6 @@
 package com.tasktracker.task.store;
 
+import com.tasktracker.collections.CustomLinkedHashMap;
 import com.tasktracker.task.model.implementations.TaskView;
 import java.util.*;
 
@@ -10,8 +11,7 @@ import java.util.*;
 public class InMemoryHistoryRepository implements HistoryRepository {
   private static final int INITIAL_CAPACITY = 16;
   private static final float LOAD_FACTOR = 0.75f;
-  private final LinkedHashMap<Integer, TaskView> store =
-      new LinkedHashMap<>(INITIAL_CAPACITY, LOAD_FACTOR, true);
+  private final CustomLinkedHashMap<Integer, TaskView> store = new CustomLinkedHashMap<>();
 
   /**
    * Adds a new task view to the history repository, replacing any existing task view with the same
