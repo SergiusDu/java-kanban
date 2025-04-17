@@ -21,7 +21,6 @@ public final class InMemoryTaskRepository implements TaskRepository {
    * @param <T> the type of the task being added, which extends {@link Task}
    * @param task the task to be added to the repository
    * @return the added task with its current details
-   * @throws NullPointerException if the provided {@code task} is {@code null}
    */
   @Override
   public <T extends Task> T addTask(final T task) {
@@ -37,15 +36,15 @@ public final class InMemoryTaskRepository implements TaskRepository {
    * @param updatedTask the com.tasktracker.task containing the updated details, including a valid
    *     ID
    * @return the updated {@link Task} after applying the changes
-   * @throws NullPointerException if the provided {@code updatedTask} is {@code null}
-   * @throws NoSuchElementException if no com.tasktracker.task exists in the repository for the
-   *     specified ID
    */
-  public Task updateTask(final Task updatedTask) throws NoSuchElementException {
+  public Task updateTask(final Task updatedTask) {
     Objects.requireNonNull(updatedTask, "Updated com.tasktracker.task can't be null");
-    checkTaskExists(updatedTask.getId());
-    store.put(updatedTask.getId(), updatedTask);
-    return updatedTask;
+    final int id = updatedTask.getId();
+    if (store.get(id) == null) {
+      throw new IllegalArgumentException("Task with ID " + id + " not found for update.");
+    }
+    Task updateResult = store.put(id, updatedTask);
+    return updateResult == null ? null : updatedTask;
   }
 
   /**
@@ -74,10 +73,8 @@ public final class InMemoryTaskRepository implements TaskRepository {
    * @param id the unique identifier of the com.tasktracker.task to remove from the repository
    * @return an {@link Optional} containing the removed com.tasktracker.task, or an empty {@link
    *     Optional} if no com.tasktracker.task was found for the given ID
-   * @throws IllegalArgumentException if no com.tasktracker.task exists for the specified ID
    */
   public Optional<Task> removeTask(final int id) {
-    checkTaskExists(id);
     return Optional.ofNullable(store.remove(id));
   }
 
@@ -108,18 +105,6 @@ public final class InMemoryTaskRepository implements TaskRepository {
    */
   public void clearAllTasks() {
     store.clear();
-  }
-
-  /**
-   * Verifies that a com.tasktracker.task with the specified ID exists in the repository.
-   *
-   * @param id the unique identifier of the com.tasktracker.task
-   * @throws NoSuchElementException if no com.tasktracker.task with the specified ID exists
-   */
-  private void checkTaskExists(final int id) throws NoSuchElementException {
-    if (!store.containsKey(id)) {
-      throw new NoSuchElementException("Task ID" + id + " does not exist.");
-    }
   }
 
   /**

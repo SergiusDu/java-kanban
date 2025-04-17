@@ -36,7 +36,6 @@ public abstract sealed class Task implements Comparable<Task>
    * @param creationDate the creation date of the task; cannot be null
    * @param updateDate the last update time of the task; cannot be null
    * @throws ValidationException if any of the value validation checks fail
-   * @throws NullPointerException if any parameter is null where not allowed
    */
   protected Task(
       final int id,
@@ -45,7 +44,7 @@ public abstract sealed class Task implements Comparable<Task>
       final TaskStatus status,
       final LocalDateTime creationDate,
       final LocalDateTime updateDate)
-      throws ValidationException, NullPointerException {
+      throws ValidationException {
     this.id = getValidatedId(id);
     this.title = getValidatedTitle(title);
     this.description = getValidatedDescription(description);
@@ -59,7 +58,6 @@ public abstract sealed class Task implements Comparable<Task>
    *
    * @param creationDate the LocalDateTime object to validate
    * @return the validated LocalDateTime object
-   * @throws NullPointerException if the creationDate is null
    */
   private static LocalDateTime getValidatedCreationDate(final LocalDateTime creationDate) {
     Objects.requireNonNull(creationDate, "Date can be null." + creationDate);
@@ -86,10 +84,9 @@ public abstract sealed class Task implements Comparable<Task>
    *
    * @param title the com.tasktracker.task title to validate
    * @return the validated com.tasktracker.task title
-   * @throws NullPointerException if the title is null
    * @throws ValidationException if the title is shorter than the minimum required length
    */
-  private static String getValidatedTitle(final String title) {
+  private static String getValidatedTitle(final String title) throws ValidationException {
     Objects.requireNonNull(title, "Title can't be null.");
     if (title.length() < CommonValidationUtils.MIN_TITLE_LENGTH) {
       throw new ValidationException(
@@ -108,10 +105,10 @@ public abstract sealed class Task implements Comparable<Task>
    *
    * @param description the com.tasktracker.task description to validate
    * @return the validated com.tasktracker.task description
-   * @throws NullPointerException if the description is null
    * @throws ValidationException if the description is shorter than the minimum required length
    */
-  private static String getValidatedDescription(final String description) {
+  private static String getValidatedDescription(final String description)
+      throws ValidationException {
     Objects.requireNonNull(description, "Description can't be null.");
     if (description.length() < CommonValidationUtils.MIN_DESCRIPTION_LENGTH) {
       throw new ValidationException(
@@ -129,7 +126,6 @@ public abstract sealed class Task implements Comparable<Task>
    *
    * @param status the com.tasktracker.task status to validate
    * @return the validated com.tasktracker.task status
-   * @throws NullPointerException if the status is null
    */
   private static TaskStatus getValidatedStatus(final TaskStatus status) {
     Objects.requireNonNull(status, "Task status can't be null.");
@@ -142,10 +138,10 @@ public abstract sealed class Task implements Comparable<Task>
    *
    * @param updateDate the update date to validate
    * @return the validated update date
-   * @throws NullPointerException if the update date is null
    * @throws ValidationException if the update date is earlier than the creation date
    */
-  private LocalDateTime getValidatedUpdatedTDate(final LocalDateTime updateDate) {
+  private LocalDateTime getValidatedUpdatedTDate(final LocalDateTime updateDate)
+      throws ValidationException {
     Objects.requireNonNull(updateDate, "Update date can't be null.");
     if (updateDate.isBefore(this.creationDate)) {
       throw new ValidationException("The update date can't be before creation date.");

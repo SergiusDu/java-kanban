@@ -30,7 +30,6 @@ public class InMemoryTaskManager implements TaskManager {
    * Constructs a TaskManager with the given TaskRepository for storing and managing tasks.
    *
    * @param store the repository used to store and retrieve tasks
-   * @throws NullPointerException if the given repository is null
    */
   public InMemoryTaskManager(final TaskRepository store, final HistoryManager historyManager) {
     this.store = Objects.requireNonNull(store, "TaskRepository cannot be null.");
@@ -61,7 +60,6 @@ public class InMemoryTaskManager implements TaskManager {
    * @param clazz the class type of the tasks to remove
    * @param <T> the generic type extending {@link Task} representing the com.tasktracker.task type
    * @return {@code true} if at least one com.tasktracker.task was removed, {@code false} otherwise
-   * @throws NullPointerException if the com.tasktracker.task type is {@code null}
    * @throws UnsupportedOperationException if the provided com.tasktracker.task type is unsupported
    */
   @Override
@@ -154,11 +152,11 @@ public class InMemoryTaskManager implements TaskManager {
    *
    * @param regularTaskCreationDTO the DTO containing data for the Regular Task
    * @return the created Regular Task
-   * @throws NullPointerException if the DTO is null
    * @throws ValidationException if the DTO data is invalid
    */
   @Override
-  public RegularTask addTask(final RegularTaskCreationDTO regularTaskCreationDTO) {
+  public RegularTask addTask(final RegularTaskCreationDTO regularTaskCreationDTO)
+      throws ValidationException {
     Objects.requireNonNull(regularTaskCreationDTO, "RegularTaskCreationDTO cannot be null.");
     validateDto(regularTaskCreationDTO, RegularTaskCreationDTO.class);
     LocalDateTime currentTime = LocalDateTime.now();
@@ -177,11 +175,11 @@ public class InMemoryTaskManager implements TaskManager {
    *
    * @param epicTaskCreationDTO the DTO containing data for the Epic Task
    * @return the created Epic Task
-   * @throws NullPointerException if the DTO is null
    * @throws ValidationException if the DTO data is invalid
    */
   @Override
-  public EpicTask addTask(final EpicTaskCreationDTO epicTaskCreationDTO) {
+  public EpicTask addTask(final EpicTaskCreationDTO epicTaskCreationDTO)
+      throws ValidationException {
     Objects.requireNonNull(epicTaskCreationDTO, "EpicTaskCreationDTO cannot be null.");
     validateDto(epicTaskCreationDTO, EpicTaskCreationDTO.class);
     LocalDateTime currentTime = LocalDateTime.now();
@@ -201,11 +199,10 @@ public class InMemoryTaskManager implements TaskManager {
    *
    * @param subTaskCreationDTO the DTO containing data for the Sub-Task
    * @return the created Sub-Task
-   * @throws NullPointerException if the DTO is null
    * @throws ValidationException if the DTO data or associated Epic Task is invalid
    */
   @Override
-  public SubTask addTask(final SubTaskCreationDTO subTaskCreationDTO) {
+  public SubTask addTask(final SubTaskCreationDTO subTaskCreationDTO) throws ValidationException {
     Objects.requireNonNull(subTaskCreationDTO, "SubTaskCreationDTO cannot be null.");
     validateDto(subTaskCreationDTO, SubTaskCreationDTO.class);
     EpicTask epicTask = getTaskOrThrowIfInvalid(subTaskCreationDTO.epicId(), EpicTask.class);
@@ -239,11 +236,11 @@ public class InMemoryTaskManager implements TaskManager {
    *
    * @param regularTaskUpdateDTO the DTO containing updated data for the Regular Task
    * @return the updated Regular Task
-   * @throws NullPointerException if the DTO is null
    * @throws ValidationException if the com.tasktracker.task data is invalid
    */
   @Override
-  public RegularTask updateTask(final RegularTaskUpdateDTO regularTaskUpdateDTO) {
+  public RegularTask updateTask(final RegularTaskUpdateDTO regularTaskUpdateDTO)
+      throws ValidationException {
     Objects.requireNonNull(regularTaskUpdateDTO, "RegularTaskUpdateDTO cannot be null.");
     validateDto(regularTaskUpdateDTO, RegularTaskUpdateDTO.class);
     RegularTask currentTask = getTaskOrThrowIfInvalid(regularTaskUpdateDTO.id(), RegularTask.class);
@@ -264,11 +261,10 @@ public class InMemoryTaskManager implements TaskManager {
    *
    * @param subTaskUpdateDTO the DTO containing updated data for the Sub-Task
    * @return the updated Sub-Task
-   * @throws NullPointerException if the DTO is null
    * @throws ValidationException if the com.tasktracker.task data or associated Epic Task is invalid
    */
   @Override
-  public SubTask updateTask(final SubTaskUpdateDTO subTaskUpdateDTO) {
+  public SubTask updateTask(final SubTaskUpdateDTO subTaskUpdateDTO) throws ValidationException {
     Objects.requireNonNull(subTaskUpdateDTO, "SubTaskUpdateDTO cannot be null.");
     validateDto(subTaskUpdateDTO, SubTaskUpdateDTO.class);
     SubTask currentSubTask = getTaskOrThrowIfInvalid(subTaskUpdateDTO.id(), SubTask.class);
@@ -299,11 +295,10 @@ public class InMemoryTaskManager implements TaskManager {
    *
    * @param epicTaskUpdateDTO the DTO containing updated data for the Epic Task
    * @return the updated Epic Task
-   * @throws NullPointerException if the DTO is null
    * @throws ValidationException if the com.tasktracker.task data is invalid
    */
   @Override
-  public EpicTask updateTask(final EpicTaskUpdateDTO epicTaskUpdateDTO) {
+  public EpicTask updateTask(final EpicTaskUpdateDTO epicTaskUpdateDTO) throws ValidationException {
     Objects.requireNonNull(epicTaskUpdateDTO, "EpicTaskUpdateDTO cannot be null.");
     validateDto(epicTaskUpdateDTO, EpicTaskUpdateDTO.class);
     EpicTask currentTask = getTaskOrThrowIfInvalid(epicTaskUpdateDTO.id(), EpicTask.class);
@@ -327,7 +322,7 @@ public class InMemoryTaskManager implements TaskManager {
    * @throws ValidationException if the Epic Task does not exist or is invalid
    */
   @Override
-  public Collection<SubTask> getEpicSubtasks(int epicId) {
+  public Collection<SubTask> getEpicSubtasks(int epicId) throws ValidationException {
     Set<Integer> subtaskIds = getTaskOrThrowIfInvalid(epicId, EpicTask.class).getSubtaskIds();
     return subtaskIds.stream()
         .map(subtaskId -> getTaskOrThrowIfInvalid(subtaskId, SubTask.class))
@@ -339,7 +334,6 @@ public class InMemoryTaskManager implements TaskManager {
    *
    * @param targetClass the class type of tasks to retrieve
    * @return a collection of tasks matching the specified class type
-   * @throws NullPointerException if the specified class type is null
    */
   @Override
   public <T extends Task> Collection<T> getAllTasksByClass(Class<T> targetClass) {
@@ -370,7 +364,6 @@ public class InMemoryTaskManager implements TaskManager {
    * @param clazz the class type the com.tasktracker.task must match
    * @param <T> the desired com.tasktracker.task type
    * @return the com.tasktracker.task cast to the specified type
-   * @throws NullPointerException if the class type is null
    * @throws ValidationException if the com.tasktracker.task does not exist or does not match the
    *     specified type
    */
@@ -393,7 +386,6 @@ public class InMemoryTaskManager implements TaskManager {
    * @param taskId the ID of the com.tasktracker.task to validate
    * @param clazz the class type the com.tasktracker.task must match
    * @param <T> the desired com.tasktracker.task type
-   * @throws NullPointerException if the class type is null
    * @throws ValidationException if the com.tasktracker.task does not exist or does not match the
    *     specified type
    */
@@ -416,10 +408,10 @@ public class InMemoryTaskManager implements TaskManager {
    *
    * @param subtaskIds the set of Sub-Task IDs associated with the Epic Task
    * @return the calculated status of the Epic Task
-   * @throws NullPointerException if the Sub-Task IDs set is null
    * @throws ValidationException if a Sub-Task associated with an ID does not exist
    */
-  private TaskStatus calculateEpicTaskStatus(final Set<Integer> subtaskIds) {
+  private TaskStatus calculateEpicTaskStatus(final Set<Integer> subtaskIds)
+      throws ValidationException {
     Objects.requireNonNull(subtaskIds, "Subtask IDs cannot be null.");
     Set<TaskStatus> subTaskStatuses =
         subtaskIds.stream()
@@ -454,7 +446,6 @@ public class InMemoryTaskManager implements TaskManager {
    * Updates the status of an Epic Task by recalculating it based on its associated Sub-Tasks.
    *
    * @param epicTask the Epic Task to update
-   * @throws NullPointerException if the Epic Task is null
    */
   private void updateEpicTaskStatus(final EpicTask epicTask) {
     Objects.requireNonNull(epicTask, "Epic Task can't be null.");
@@ -475,7 +466,6 @@ public class InMemoryTaskManager implements TaskManager {
    * @param dto the DTO object to validate
    * @param clazz the class type of the DTO
    * @param <T> the type of the DTO
-   * @throws NullPointerException if the DTO or its class type is null
    * @throws ValidationException if the DTO is invalid
    */
   private <T> void validateDto(final T dto, final Class<T> clazz) throws ValidationException {

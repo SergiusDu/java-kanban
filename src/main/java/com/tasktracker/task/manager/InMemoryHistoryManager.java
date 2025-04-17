@@ -19,10 +19,8 @@ public class InMemoryHistoryManager implements HistoryManager {
    *
    * @param historyStore the {@link HistoryRepository} used for managing the task history; must not
    *     be {@code null}
-   * @throws NullPointerException if {@code historyStore} is {@code null}
    */
-  public InMemoryHistoryManager(final HistoryRepository historyStore)
-      throws NullPointerException, IllegalArgumentException {
+  public InMemoryHistoryManager(final HistoryRepository historyStore) {
     Objects.requireNonNull(historyStore, "History Repository can't be null");
     this.historyStore = historyStore;
   }
@@ -46,10 +44,9 @@ public class InMemoryHistoryManager implements HistoryManager {
    * @param task the task to be added to the history, must not be {@code null}
    * @return an {@link Optional} containing the previous {@link TaskView}, if a task with the same
    *     ID was replaced; otherwise, an empty {@link Optional}
-   * @throws NullPointerException if the provided {@code task} is {@code null}
    */
   @Override
-  public Optional<TaskView> put(final Task task) throws NullPointerException {
+  public Optional<TaskView> put(final Task task) {
     Objects.requireNonNull(task, "Task can't be null.");
     return historyStore.put(new TaskView(task.getId(), LocalDateTime.now()));
   }

@@ -7,7 +7,6 @@ import com.tasktracker.task.model.implementations.RegularTask;
 import com.tasktracker.task.model.implementations.Task;
 import java.time.LocalDateTime;
 import java.util.Collection;
-import java.util.NoSuchElementException;
 import java.util.Optional;
 import java.util.function.Predicate;
 import org.junit.jupiter.api.BeforeEach;
@@ -105,22 +104,20 @@ class InMemoryTaskRepositoryTest {
   }
 
   @Test
-  @DisplayName("Should throw NoSuchElementException when updating a non-existent task")
+  @DisplayName("Should throw IllegalArgumentException when updating a non-existent task")
   void testUpdateNonExistentTaskThrowsException() {
-    // We do not store this task, so it does not exist in the repository
     RegularTask nonExistent =
         new RegularTask(
             999,
-            "NonExistentTitl", // length > 10
-            "NonExistentDescr", // length > 10
+            "NonExistentTitl",
+            "NonExistentDescr",
             TaskStatus.NEW,
             LocalDateTime.now(),
             LocalDateTime.now());
-
     assertThrows(
-        NoSuchElementException.class,
+        IllegalArgumentException.class,
         () -> repository.updateTask(nonExistent),
-        "Updating a non-existent task should throw NoSuchElementException");
+        "Updating a non-existent task should throw IllegalArgumentException");
   }
 
   @Test
@@ -166,12 +163,10 @@ class InMemoryTaskRepositoryTest {
   }
 
   @Test
-  @DisplayName("Should throw NoSuchElementException when removing a non-existent ID")
+  @DisplayName("Should return empty Optional when removing a non-existent ID")
   void testRemoveTaskNonExistent() {
-    assertThrows(
-        NoSuchElementException.class,
-        () -> repository.removeTask(12345),
-        "Removing a non-existent ID should throw NoSuchElementException");
+    boolean isEmpty = repository.removeTask(12345).isEmpty();
+    assertTrue(isEmpty, "Removing a non-existent ID should return an empty Optional");
   }
 
   @Test

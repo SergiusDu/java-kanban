@@ -16,7 +16,6 @@ public interface HistoryRepository {
    * @param taskView the task view to be added to the repository; must not be {@code null}
    * @return an {@link Optional} containing the previous {@link TaskView} if one was replaced, or an
    *     empty {@link Optional} if no task view with the same ID existed
-   * @throws NullPointerException if the provided {@code taskView} is {@code null}
    */
   Optional<TaskView> put(TaskView taskView);
 

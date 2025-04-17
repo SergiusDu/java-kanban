@@ -20,7 +20,6 @@ public class InMemoryHistoryRepository implements HistoryRepository {
    * @param taskView the task view to be added to the repository
    * @return an {@link Optional} containing the previous {@link TaskView} if one was replaced, or an
    *     empty {@link Optional} if no task view with the same ID existed
-   * @throws NullPointerException if the provided {@code taskView} is {@code null}
    */
   @Override
   public Optional<TaskView> put(final TaskView taskView) {

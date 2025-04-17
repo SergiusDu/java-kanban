@@ -27,7 +27,6 @@ public interface HistoryManager {
    *
    * @param task the task to add to the history, must not be {@code null}
    * @return {@code true} if the task was successfully added, otherwise {@code false}
-   * @throws NullPointerException if the provided task is {@code null}
    */
   Optional<TaskView> put(final Task task);
 

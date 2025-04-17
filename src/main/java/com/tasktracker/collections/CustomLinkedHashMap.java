@@ -292,7 +292,7 @@ public class CustomLinkedHashMap<K, V>
           if (!value.equals(m.get(key))) return false;
         }
       }
-    } catch (ClassCastException | NullPointerException unused) {
+    } catch (ClassCastException unused) {
       return false;
     }
     return true;

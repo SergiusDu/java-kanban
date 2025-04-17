@@ -21,7 +21,6 @@ public final class RegularTask extends Task {
    * @param creationDateTime the creation date of the task; cannot be null
    * @param updateDateTime the last update date of the task; cannot be null
    * @throws ValidationException if any input validation fails
-   * @throws NullPointerException if any parameter is null
    */
   public RegularTask(
       final int id,
@@ -30,7 +29,7 @@ public final class RegularTask extends Task {
       final TaskStatus status,
       final LocalDateTime creationDateTime,
       final LocalDateTime updateDateTime)
-      throws ValidationException, NullPointerException {
+      throws ValidationException {
     super(id, title, description, status, creationDateTime, updateDateTime);
   }
 
