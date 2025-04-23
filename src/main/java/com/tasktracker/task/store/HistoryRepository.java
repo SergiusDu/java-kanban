@@ -10,35 +10,22 @@ import java.util.Optional;
  */
 public interface HistoryRepository {
   /**
-   * Adds a new task view to the history repository. If the task view is already present, it will
-   * not be added again.
+   * Adds a new task view to the history repository, replacing any existing task view with the same
+   * ID.
    *
-   * @param taskView the task view to be added to the repository
-   * @return {@code true} if the task view was successfully added, {@code false} if it was already
-   *     present
-   * @throws NullPointerException if the provided {@code taskView} is {@code null}
+   * @param taskView the task view to be added to the repository; must not be {@code null}
+   * @return an {@link Optional} containing the previous {@link TaskView} if one was replaced, or an
+   *     empty {@link Optional} if no task view with the same ID existed
    */
-  boolean add(TaskView taskView);
+  Optional<TaskView> put(TaskView taskView);
 
   /**
-   * Retrieves all tasks stored in the history repository.
+   * Retrieves all task views stored in the history repository as a collection of map entries. Each
+   * entry consists of the task ID as the key and its corresponding {@link TaskView} as the value.
    *
-   * @return a collection containing all tasks in the repository
+   * @return an unmodifiable collection of map entries containing all task views in the repository
    */
   Collection<TaskView> getAll();
 
-  /**
-   * Returns the number of tasks currently stored in the repository.
-   *
-   * @return the size of the repository
-   */
-  int size();
-
-  /**
-   * Removes and returns the first task from the history repository, if present.
-   *
-   * @return an {@code Optional} containing the first task if it exists, or an empty {@code
-   *     Optional} if the repository is empty
-   */
-  Optional<TaskView> pollFirst();
+  Optional<TaskView> remove(int id);
 }

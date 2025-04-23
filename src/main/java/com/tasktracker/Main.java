@@ -17,12 +17,88 @@ import java.util.Optional;
 public class Main {
   public static void main(String[] args) {
     // Run different test sets
+    testUserScenario();
     testBasicCrudOperations();
     testAdditionalEpicScenarios();
     testRemovingTasks();
     testUpdateEpicAndSubtaskStatus();
     testRemoveTasksByType();
     testBoundaryCases();
+  }
+
+  private static void testUserScenario() {
+    TaskManager tm = Managers.getDefault();
+
+    // Create two regular tasks
+    RegularTask regularTask1 =
+        tm.addTask(
+            new RegularTaskCreationDTO(
+                "Regular Task 1", "Regular task 1 description is long enough"));
+    RegularTask regularTask2 =
+        tm.addTask(
+            new RegularTaskCreationDTO(
+                "Regular Task 2", "Regular task 2 description is long enough"));
+
+    // Create an epic with three subtasks
+    EpicTask epicWithSubtasks =
+        tm.addTask(
+            new EpicTaskCreationDTO("Epic With Subtasks", "Epic with three subtasks description"));
+    SubTask subTask1 =
+        tm.addTask(
+            new SubTaskCreationDTO(
+                "Subtask 1   ", "Subtask 1 description is long enough", epicWithSubtasks.getId()));
+    SubTask subTask2 =
+        tm.addTask(
+            new SubTaskCreationDTO(
+                "Subtask 2   ", "Subtask 2 description is long enough", epicWithSubtasks.getId()));
+    SubTask subTask3 =
+        tm.addTask(
+            new SubTaskCreationDTO(
+                "Subtask 3   ", "Subtask 3 description is long enough", epicWithSubtasks.getId()));
+
+    // Create an epic without subtasks
+    EpicTask epicWithoutSubtasks =
+        tm.addTask(
+            new EpicTaskCreationDTO(
+                "Epic Without Subtasks", "Epic without any subtasks description"));
+
+    // Access tasks in different order to build the history
+    tm.getTask(regularTask1.getId());
+    printHistory(tm);
+    tm.getTask(epicWithSubtasks.getId());
+    printHistory(tm);
+    tm.getTask(subTask2.getId());
+    printHistory(tm);
+    tm.getTask(regularTask2.getId());
+    printHistory(tm);
+    tm.getTask(epicWithoutSubtasks.getId());
+    printHistory(tm);
+    tm.getTask(subTask1.getId());
+    printHistory(tm);
+    tm.getTask(subTask3.getId());
+    printHistory(tm);
+    tm.getTask(epicWithSubtasks.getId());
+    printHistory(tm);
+
+    System.out.println("Final history (no duplicates expected):");
+    printHistory(tm);
+
+    // Remove a task present in history (e.g., Regular Task 1)
+    tm.removeTaskById(regularTask1.getId());
+    System.out.println("History after deleting Regular Task 1:");
+    printHistory(tm);
+
+    // Remove the epic with subtasks and ensure both the epic and its subtasks are removed from
+    // history
+    tm.removeTaskById(epicWithSubtasks.getId());
+    System.out.println("History after deleting epic with subtasks:");
+    printHistory(tm);
+  }
+
+  private static void printHistory(TaskManager tm) {
+    System.out.print("History: ");
+    tm.getHistory().forEach(task -> System.out.print(task.getId() + " "));
+    System.out.println();
   }
 
   /** Basic CRUD operations: creation, reading, updating, printing. */
@@ -70,7 +146,7 @@ public class Main {
     printAll(tm);
 
     // Check one of the tasks by ID
-    Optional<Task> maybeReg2 = tm.getTaskById(regTask2.getId());
+    Optional<Task> maybeReg2 = tm.getTask(regTask2.getId());
     System.out.println("Check getTaskById for RegularTask2: " + maybeReg2);
 
     System.out.println("====================================\n");

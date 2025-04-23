@@ -2,41 +2,30 @@ package com.tasktracker.task.model.implementations;
 
 import java.time.LocalDateTime;
 import java.util.Objects;
-import java.util.UUID;
 
 /**
- * Represents a view of a specific task, containing details such as the view's unique ID, the
- * timestamp when the view was created, and the ID of the associated task.
+ * Represents a view of a specific task, containing details such as the ID of the associated task
+ * and the timestamp when the view was created.
  */
 public final class TaskView implements Comparable<TaskView> {
-  private final UUID viewId;
   private final int taskId;
   private final LocalDateTime viewDateTime;
 
   /**
-   * Creates a new {@code TaskView} instance with a unique identifier and the current timestamp.
+   * Creates a new {@code TaskView} instance with the specified task ID and timestamp.
    *
    * @param taskId the ID of the task being viewed
+   * @param viewDateTime the timestamp when the task view was created
    */
   public TaskView(int taskId, LocalDateTime viewDateTime) {
-    this.viewId = UUID.randomUUID();
     this.viewDateTime = viewDateTime;
     this.taskId = taskId;
   }
 
   /**
-   * Retrieves the unique identifier for this task view.
-   *
-   * @return the unique ID of the task view
-   */
-  public UUID getViewId() {
-    return viewId;
-  }
-
-  /**
    * Retrieves the timestamp indicating when this task view was created.
    *
-   * @return the creation time of the task view
+   * @return the timestamp when this task view was created
    */
   public LocalDateTime getViewDateTime() {
     return viewDateTime;
@@ -54,59 +43,49 @@ public final class TaskView implements Comparable<TaskView> {
   /**
    * Compares the specified object with this {@code TaskView} for equality.
    *
-   * @param object the object to be compared for equality with this task view
-   * @return {@code true} if the specified object is equal to this task view; {@code false}
-   *     otherwise
+   * @param object the object to be compared for equality with this {@code TaskView}
+   * @return {@code true} if the specified object is a {@code TaskView} with the same task ID as
+   *     this {@code TaskView}; {@code false} otherwise
    */
   @Override
   public boolean equals(Object object) {
     if (object == null || getClass() != object.getClass()) return false;
     TaskView taskView = (TaskView) object;
-    return taskId == taskView.taskId
-        && Objects.equals(this.viewDateTime, taskView.getViewDateTime())
-        && Objects.equals(this.viewId, taskView.getViewId());
+    return taskId == taskView.taskId;
   }
 
   /**
-   * Returns the hash code value for this {@code TaskView}.
+   * Returns the hash code value for this {@code TaskView}. The hash code is computed based on the
+   * task ID.
    *
-   * @return the hash code value for this task view
+   * @return the hash code value for this {@code TaskView}
    */
   @Override
   public int hashCode() {
-    return Objects.hash(viewId, taskId, viewDateTime);
+    return Objects.hash(taskId);
   }
 
   /**
    * Returns a string representation of this {@code TaskView}.
    *
-   * @return a string representation of this task view
+   * @return a string representation of this {@code TaskView} in the format:
+   *     TaskView{taskId=<taskId>, viewDateTime=<viewDateTime>}
    */
   @Override
   public String toString() {
-    return "TaskView{" + "viewDateTime=" + viewDateTime + ", taskId=" + taskId + '}';
+    return "TaskView{" + "taskId=" + taskId + ", viewDateTime=" + viewDateTime + '}';
   }
 
   /**
-   * Compares this {@code TaskView} instance with another {@code TaskView} for ordering based on the
-   * view creation timestamp, task ID, and unique view ID.
+   * Compares this {@code TaskView} instance with another {@code TaskView} to determine their
+   * relative order. The comparison is based on the task ID.
    *
    * @param other the {@code TaskView} to compare with this instance
-   * @return a negative integer, zero, or a positive integer as this {@code TaskView}'s creation
-   *     timestamp is earlier than, equal to, or later than the specified {@code TaskView}'s
-   *     creation timestamp. If timestamps are equal, compares by task ID, and if task IDs are also
-   *     equal, compares by view ID.
+   * @return a negative integer, zero, or a positive integer as this {@code TaskView}'s task ID is
+   *     less than, equal to, or greater than the specified {@code TaskView}'s task ID
    */
   @Override
   public int compareTo(TaskView other) {
-    int cmp = this.viewDateTime.compareTo(other.viewDateTime);
-    if (cmp != 0) {
-      return cmp;
-    }
-    cmp = Integer.compare(this.taskId, other.getTaskId());
-    if (cmp != 0) {
-      return cmp;
-    }
-    return this.viewId.compareTo(other.viewId);
+    return Integer.compare(this.taskId, other.getTaskId());
   }
 }

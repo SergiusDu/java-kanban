@@ -14,21 +14,10 @@ class TaskViewTest {
     int taskId = 1;
     LocalDateTime viewTime = LocalDateTime.now();
     TaskView taskView = new TaskView(taskId, viewTime);
-
-    assertNotNull(taskView.getViewId());
     assertEquals(taskId, taskView.getTaskId());
     assertEquals(viewTime, taskView.getViewDateTime());
   }
 
-  @Test
-  @DisplayName("getViewId should return the correct UUID")
-  void getViewId() {
-    int taskId = 2;
-    LocalDateTime viewTime = LocalDateTime.now();
-    TaskView taskView = new TaskView(taskId, viewTime);
-
-    assertNotNull(taskView.getViewId());
-  }
 
   @Test
   @DisplayName("getViewDateTime should return the correct viewDateTime")
@@ -61,7 +50,7 @@ class TaskViewTest {
   @DisplayName("equals should return false for different TaskView instances")
   void equals_DifferentInstances() {
     TaskView taskView1 = new TaskView(6, LocalDateTime.now());
-    TaskView taskView2 = new TaskView(6, LocalDateTime.now());
+    TaskView taskView2 = new TaskView(7, LocalDateTime.now());
     assertNotEquals(taskView1, taskView2, "Different TaskView instances should not be equal");
   }
 
@@ -79,45 +68,25 @@ class TaskViewTest {
   @DisplayName("hashCode should differ for different TaskView instances")
   void hashCode_DifferentInstances() {
     TaskView taskView1 = new TaskView(8, LocalDateTime.now());
-    TaskView taskView2 = new TaskView(8, LocalDateTime.now());
+    TaskView taskView2 = new TaskView(9, LocalDateTime.now());
     assertNotEquals(
         taskView1.hashCode(),
         taskView2.hashCode(),
         "Different TaskView instances should have different hashCodes");
   }
 
-  @Test
-  @DisplayName("compareTo should order TaskViews based on viewDateTime and taskId")
-  void compareTo_OrderBasedOnFields() {
-    LocalDateTime time1 = LocalDateTime.of(2023, 4, 1, 10, 0);
-    LocalDateTime time2 = LocalDateTime.of(2023, 4, 1, 11, 0);
-
-    TaskView taskView1 = new TaskView(9, time1);
-    TaskView taskView2 = new TaskView(10, time1);
-    TaskView taskView3 = new TaskView(9, time2);
-
-    assertTrue(
-        taskView1.compareTo(taskView2) < 0,
-        "taskView1 should come before taskView2 based on taskId");
-    assertTrue(
-        taskView1.compareTo(taskView3) < 0,
-        "taskView1 should come before taskView3 based on viewDateTime");
-    assertTrue(
-        taskView3.compareTo(taskView1) > 0,
-        "taskView3 should come after taskView1 based on viewDateTime");
-  }
 
   @Test
   @DisplayName("compareTo should handle equal TaskViews correctly")
   void compareTo_EqualTaskViews() {
     LocalDateTime viewTime = LocalDateTime.of(2023, 6, 1, 9, 0);
     TaskView taskView1 = new TaskView(11, viewTime);
-    TaskView taskView2 = new TaskView(11, viewTime);
+    TaskView taskView2 = new TaskView(12, viewTime);
 
     assertNotEquals(
-        taskView1.getViewId(),
-        taskView2.getViewId(),
-        "Different TaskViews should have different UUIDs");
+        taskView1.getTaskId(),
+        taskView2.getTaskId(),
+        "Different TaskViews should have different TaskIDs");
     assertNotEquals(
         0, taskView1.compareTo(taskView2), "Different TaskViews should not be equal in compareTo");
   }

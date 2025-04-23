@@ -121,7 +121,7 @@ public class InMemoryTaskManagerTest {
     assertEquals(TaskStatus.NEW, created.getStatus());
     assertEquals(epicTask.getId(), created.getEpicTaskId());
 
-    EpicTask updatedEpic = (EpicTask) manager.getTaskById(epicTask.getId()).get();
+    EpicTask updatedEpic = (EpicTask) manager.getTask(epicTask.getId()).get();
     assertTrue(updatedEpic.getSubtaskIds().contains(created.getId()));
   }
 
@@ -183,7 +183,7 @@ public class InMemoryTaskManagerTest {
             subTask1.getId(), VALID_TITLE, VALID_DESCRIPTION, TaskStatus.DONE, epicTask.getId());
     manager.updateTask(dto);
 
-    EpicTask updatedEpic = (EpicTask) manager.getTaskById(epicTask.getId()).get();
+    EpicTask updatedEpic = (EpicTask) manager.getTask(epicTask.getId()).get();
     assertEquals(TaskStatus.IN_PROGRESS, updatedEpic.getStatus());
 
     dto =
@@ -191,7 +191,7 @@ public class InMemoryTaskManagerTest {
             subTask2.getId(), VALID_TITLE, VALID_DESCRIPTION, TaskStatus.DONE, epicTask.getId());
     manager.updateTask(dto);
 
-    updatedEpic = (EpicTask) manager.getTaskById(epicTask.getId()).get();
+    updatedEpic = (EpicTask) manager.getTask(epicTask.getId()).get();
     assertEquals(TaskStatus.DONE, updatedEpic.getStatus());
   }
 
@@ -204,7 +204,7 @@ public class InMemoryTaskManagerTest {
 
     assertTrue(removed.isPresent());
     assertEquals(created.getId(), removed.get().getId());
-    assertFalse(manager.getTaskById(created.getId()).isPresent());
+    assertFalse(manager.getTask(created.getId()).isPresent());
   }
 
   @Test
@@ -220,12 +220,12 @@ public class InMemoryTaskManagerTest {
         new SubTaskUpdateDTO(
             sub1.getId(), VALID_TITLE, VALID_DESCRIPTION, TaskStatus.DONE, epic.getId()));
     manager.removeTaskById(sub1.getId());
-    EpicTask updatedEpic = (EpicTask) manager.getTaskById(epic.getId()).orElseThrow();
+    EpicTask updatedEpic = (EpicTask) manager.getTask(epic.getId()).orElseThrow();
 
-    assertFalse(manager.getTaskById(sub1.getId()).isPresent());
+    assertFalse(manager.getTask(sub1.getId()).isPresent());
     assertEquals(1, updatedEpic.getSubtaskIds().size());
     assertEquals(TaskStatus.NEW, updatedEpic.getStatus());
-    Optional<Task> removedSub1 = manager.getTaskById(sub1.getId());
+    Optional<Task> removedSub1 = manager.getTask(sub1.getId());
     assertFalse(removedSub1.isPresent());
   }
 
@@ -241,9 +241,9 @@ public class InMemoryTaskManagerTest {
     Optional<Task> removed = manager.removeTaskById(epic.getId());
 
     assertTrue(removed.isPresent());
-    assertFalse(manager.getTaskById(epic.getId()).isPresent());
-    assertFalse(manager.getTaskById(sub1.getId()).isPresent());
-    assertFalse(manager.getTaskById(sub2.getId()).isPresent());
+    assertFalse(manager.getTask(epic.getId()).isPresent());
+    assertFalse(manager.getTask(sub1.getId()).isPresent());
+    assertFalse(manager.getTask(sub2.getId()).isPresent());
   }
 
   @Test
@@ -276,7 +276,7 @@ public class InMemoryTaskManagerTest {
 
     assertTrue(removed);
     assertTrue(manager.getAllTasksByClass(SubTask.class).isEmpty());
-    EpicTask updatedEpic = (EpicTask) manager.getTaskById(epic.getId()).orElseThrow();
+    EpicTask updatedEpic = (EpicTask) manager.getTask(epic.getId()).orElseThrow();
     assertTrue(updatedEpic.getSubtaskIds().isEmpty());
     assertEquals(TaskStatus.IN_PROGRESS, updatedEpic.getStatus());
   }
@@ -326,10 +326,10 @@ public class InMemoryTaskManagerTest {
         new SubTaskUpdateDTO(
             sub2.getId(), VALID_TITLE, VALID_DESCRIPTION, TaskStatus.IN_PROGRESS, epic.getId()));
     manager.removeTaskById(sub2.getId());
-    EpicTask updatedEpic = (EpicTask) manager.getTaskById(epic.getId()).orElseThrow();
+    EpicTask updatedEpic = (EpicTask) manager.getTask(epic.getId()).orElseThrow();
 
     assertEquals(TaskStatus.DONE, updatedEpic.getStatus());
-    assertFalse(manager.getTaskById(sub2.getId()).isPresent());
+    assertFalse(manager.getTask(sub2.getId()).isPresent());
   }
 
   @Test
@@ -349,10 +349,10 @@ public class InMemoryTaskManagerTest {
 
     // Assert
     assertTrue(removed.isPresent());
-    assertFalse(manager.getTaskById(regularTask.getId()).isPresent());
-    assertTrue(manager.getTaskById(epicTask.getId()).isPresent());
-    assertTrue(manager.getTaskById(subTask.getId()).isPresent());
-    assertTrue(manager.getTaskById(anotherRegularTask.getId()).isPresent());
+    assertFalse(manager.getTask(regularTask.getId()).isPresent());
+    assertTrue(manager.getTask(epicTask.getId()).isPresent());
+    assertTrue(manager.getTask(subTask.getId()).isPresent());
+    assertTrue(manager.getTask(anotherRegularTask.getId()).isPresent());
   }
 
   @Test
@@ -372,11 +372,11 @@ public class InMemoryTaskManagerTest {
 
     // Assert
     assertTrue(removed.isPresent());
-    assertFalse(manager.getTaskById(subTask1.getId()).isPresent());
-    assertTrue(manager.getTaskById(subTask2.getId()).isPresent());
-    assertTrue(manager.getTaskById(regularTask.getId()).isPresent());
+    assertFalse(manager.getTask(subTask1.getId()).isPresent());
+    assertTrue(manager.getTask(subTask2.getId()).isPresent());
+    assertTrue(manager.getTask(regularTask.getId()).isPresent());
 
-    EpicTask updatedEpic = (EpicTask) manager.getTaskById(epicTask.getId()).orElseThrow();
+    EpicTask updatedEpic = (EpicTask) manager.getTask(epicTask.getId()).orElseThrow();
     assertFalse(updatedEpic.getSubtaskIds().contains(subTask1.getId()));
     assertTrue(updatedEpic.getSubtaskIds().contains(subTask2.getId()));
   }
@@ -399,11 +399,11 @@ public class InMemoryTaskManagerTest {
 
     // Assert
     assertTrue(removed.isPresent());
-    assertFalse(manager.getTaskById(epicTask1.getId()).isPresent());
-    assertFalse(manager.getTaskById(subTask1.getId()).isPresent());
-    assertFalse(manager.getTaskById(subTask2.getId()).isPresent());
-    assertTrue(manager.getTaskById(epicTask2.getId()).isPresent());
-    assertTrue(manager.getTaskById(regularTask.getId()).isPresent());
+    assertFalse(manager.getTask(epicTask1.getId()).isPresent());
+    assertFalse(manager.getTask(subTask1.getId()).isPresent());
+    assertFalse(manager.getTask(subTask2.getId()).isPresent());
+    assertTrue(manager.getTask(epicTask2.getId()).isPresent());
+    assertTrue(manager.getTask(regularTask.getId()).isPresent());
   }
 
   @Test
@@ -424,8 +424,8 @@ public class InMemoryTaskManagerTest {
     // Assert
     assertTrue(removedRegular);
     assertTrue(manager.getAllTasksByClass(RegularTask.class).isEmpty());
-    assertTrue(manager.getTaskById(epicTask.getId()).isPresent());
-    assertTrue(manager.getTaskById(subTask.getId()).isPresent());
+    assertTrue(manager.getTask(epicTask.getId()).isPresent());
+    assertTrue(manager.getTask(subTask.getId()).isPresent());
   }
 
   @Test
@@ -447,12 +447,12 @@ public class InMemoryTaskManagerTest {
     // Assert
     assertTrue(removedSubTasks);
     assertTrue(manager.getAllTasksByClass(SubTask.class).isEmpty());
-    assertTrue(manager.getTaskById(epicTask1.getId()).isPresent());
-    assertTrue(manager.getTaskById(epicTask2.getId()).isPresent());
-    assertTrue(manager.getTaskById(regularTask.getId()).isPresent());
+    assertTrue(manager.getTask(epicTask1.getId()).isPresent());
+    assertTrue(manager.getTask(epicTask2.getId()).isPresent());
+    assertTrue(manager.getTask(regularTask.getId()).isPresent());
 
-    EpicTask updatedEpic1 = (EpicTask) manager.getTaskById(epicTask1.getId()).orElseThrow();
-    EpicTask updatedEpic2 = (EpicTask) manager.getTaskById(epicTask2.getId()).orElseThrow();
+    EpicTask updatedEpic1 = (EpicTask) manager.getTask(epicTask1.getId()).orElseThrow();
+    EpicTask updatedEpic2 = (EpicTask) manager.getTask(epicTask2.getId()).orElseThrow();
     assertTrue(updatedEpic1.getSubtaskIds().isEmpty());
     assertTrue(updatedEpic2.getSubtaskIds().isEmpty());
     assertEquals(TaskStatus.NEW, updatedEpic1.getStatus());
@@ -474,9 +474,9 @@ public class InMemoryTaskManagerTest {
 
     // Assert
     assertFalse(removed.isPresent());
-    assertTrue(manager.getTaskById(regularTask.getId()).isPresent());
-    assertTrue(manager.getTaskById(epicTask.getId()).isPresent());
-    assertTrue(manager.getTaskById(subTask.getId()).isPresent());
+    assertTrue(manager.getTask(regularTask.getId()).isPresent());
+    assertTrue(manager.getTask(epicTask.getId()).isPresent());
+    assertTrue(manager.getTask(subTask.getId()).isPresent());
   }
 
   @Test
@@ -493,8 +493,8 @@ public class InMemoryTaskManagerTest {
 
     // Assert
     assertFalse(removed);
-    assertTrue(manager.getTaskById(epicTask.getId()).isPresent());
-    assertTrue(manager.getTaskById(subTask.getId()).isPresent());
+    assertTrue(manager.getTask(epicTask.getId()).isPresent());
+    assertTrue(manager.getTask(subTask.getId()).isPresent());
   }
 
   @Test
@@ -514,8 +514,8 @@ public class InMemoryTaskManagerTest {
 
     // Assert
     assertFalse(removed.isPresent());
-    assertTrue(manager.getTaskById(regularTask.getId()).isPresent());
-    assertTrue(manager.getTaskById(epicTask.getId()).isPresent());
+    assertTrue(manager.getTask(regularTask.getId()).isPresent());
+    assertTrue(manager.getTask(epicTask.getId()).isPresent());
   }
 
   @Test
@@ -537,9 +537,9 @@ public class InMemoryTaskManagerTest {
     // Assert
     assertTrue(removedEpics);
     assertTrue(manager.getAllTasksByClass(EpicTask.class).isEmpty());
-    assertFalse(manager.getTaskById(subTask1.getId()).isPresent());
-    assertFalse(manager.getTaskById(subTask2.getId()).isPresent());
-    assertTrue(manager.getTaskById(regularTask.getId()).isPresent());
+    assertFalse(manager.getTask(subTask1.getId()).isPresent());
+    assertFalse(manager.getTask(subTask2.getId()).isPresent());
+    assertTrue(manager.getTask(regularTask.getId()).isPresent());
   }
 
   @Test
@@ -571,14 +571,14 @@ public class InMemoryTaskManagerTest {
 
     // Assert
     // Regular2 should still exist
-    assertTrue(manager.getTaskById(regular2.getId()).isPresent());
+    assertTrue(manager.getTask(regular2.getId()).isPresent());
     // Epic1 and Epic2 should be removed
-    assertFalse(manager.getTaskById(epic1.getId()).isPresent());
-    assertFalse(manager.getTaskById(epic2.getId()).isPresent());
+    assertFalse(manager.getTask(epic1.getId()).isPresent());
+    assertFalse(manager.getTask(epic2.getId()).isPresent());
     // Sub2 should be removed because epic2 was removed
-    assertFalse(manager.getTaskById(sub2.getId()).isPresent());
+    assertFalse(manager.getTask(sub2.getId()).isPresent());
     // Sub1 was already removed
-    assertFalse(manager.getTaskById(sub1.getId()).isPresent());
+    assertFalse(manager.getTask(sub1.getId()).isPresent());
   }
 
   @Test
@@ -608,7 +608,7 @@ public class InMemoryTaskManagerTest {
         manager.addTask(new RegularTaskCreationDTO(VALID_TITLE, VALID_DESCRIPTION));
 
     // Act
-    manager.getTaskById(regularTask.getId()); // доступ к задаче
+    manager.getTask(regularTask.getId());
     Collection<Task> history = manager.getHistory();
 
     // Assert
@@ -618,36 +618,12 @@ public class InMemoryTaskManagerTest {
   }
 
   @Test
-  @DisplayName("History should remove oldest item when limit is reached")
-  void testHistoryRemovesOldestItemOnLimitReached() {
-    // Arrange
-    int historyLimit = 10;
-    List<RegularTask> tasks = new ArrayList<>(historyLimit + 1);
-    for (int i = 0; i < historyLimit + 1; i++) {
-      tasks.add(
-          manager.addTask(new RegularTaskCreationDTO(VALID_TITLE + i, VALID_DESCRIPTION + i)));
-    }
-
-    // Act
-    for (RegularTask task : tasks) {
-      manager.getTaskById(task.getId());
-    }
-
-    Collection<Task> history = manager.getHistory();
-
-    // Assert
-    assertEquals(historyLimit, history.size());
-    boolean firstTaskInHistory = history.stream().anyMatch(t -> t.getId() == tasks.get(0).getId());
-    assertFalse(firstTaskInHistory);
-  }
-
-  @Test
   @DisplayName("History should not contain deleted tasks")
   void testHistoryShouldNotContainDeletedTasks() {
     // Arrange
     RegularTask regularTask =
         manager.addTask(new RegularTaskCreationDTO(VALID_TITLE, VALID_DESCRIPTION));
-    manager.getTaskById(regularTask.getId());
+    manager.getTask(regularTask.getId());
     Collection<Task> historyBeforeDeletion = manager.getHistory();
     assertTrue(historyBeforeDeletion.stream().anyMatch(t -> t.getId() == regularTask.getId()));
 
@@ -665,11 +641,11 @@ public class InMemoryTaskManagerTest {
     // Arrange
     RegularTask regularTask =
         manager.addTask(new RegularTaskCreationDTO(VALID_TITLE, VALID_DESCRIPTION));
-    manager.getTaskById(regularTask.getId());
+    manager.getTask(regularTask.getId());
     int historySizeBefore = manager.getHistory().size();
 
     // Act
-    manager.getTaskById(9999);
+    manager.getTask(9999);
 
     // Assert
     int historySizeAfter = manager.getHistory().size();
@@ -679,7 +655,6 @@ public class InMemoryTaskManagerTest {
   @Test
   @DisplayName("History should be updated in correct order of task access")
   void testHistoryAccessOrder() {
-    // Arrange
     RegularTask task1 =
         manager.addTask(new RegularTaskCreationDTO(VALID_TITLE + "1", VALID_DESCRIPTION));
     RegularTask task2 =
@@ -687,16 +662,24 @@ public class InMemoryTaskManagerTest {
     RegularTask task3 =
         manager.addTask(new RegularTaskCreationDTO(VALID_TITLE + "3", VALID_DESCRIPTION));
 
-    // Act
-    manager.getTaskById(task1.getId());
-    manager.getTaskById(task2.getId());
-    manager.getTaskById(task3.getId());
+    manager.getTask(task1.getId());
+    manager.getTask(task2.getId());
+    manager.getTask(task3.getId());
 
-    // Assert
     List<Task> historyList = manager.getHistory().stream().toList();
     assertEquals(3, historyList.size());
     assertEquals(task1.getId(), historyList.get(0).getId());
     assertEquals(task2.getId(), historyList.get(1).getId());
     assertEquals(task3.getId(), historyList.get(2).getId());
+  }
+
+  @Test
+  @DisplayName("Should clear task from history when removed from repository")
+  void removeTaskFromHistoryOnRemoval() {
+    RegularTask task1 = manager.addTask(new RegularTaskCreationDTO(VALID_TITLE, VALID_DESCRIPTION));
+    manager.getTask(task1.getId());
+    assertEquals(1, manager.getHistory().size());
+    manager.removeTaskById(task1.getId());
+    assertEquals(0, manager.getHistory().size());
   }
 }

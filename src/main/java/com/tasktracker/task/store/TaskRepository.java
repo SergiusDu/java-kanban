@@ -2,7 +2,6 @@ package com.tasktracker.task.store;
 
 import com.tasktracker.task.model.implementations.Task;
 import java.util.Collection;
-import java.util.NoSuchElementException;
 import java.util.Optional;
 import java.util.function.Predicate;
 
@@ -19,21 +18,18 @@ public interface TaskRepository {
    * @param <T> the type of {@link Task} being added
    * @param task the task to be added to the repository
    * @return the added task with an auto-generated unique ID
-   * @throws NullPointerException if the provided {@code task} is {@code null}
    */
   <T extends Task> T addTask(T task);
 
   /**
-   * Updates an existing com.tasktracker.task in the repository. Replaces the com.tasktracker.task
-   * with the new com.tasktracker.task details based on its unique ID. The com.tasktracker.task must
-   * have a valid ID already existing in the repository.
+   * Updates an existing {@link Task} in the repository with new details. The {@link Task} to update
+   * must have a valid ID that already exists in the repository.
    *
-   * @param updatedTask the new com.tasktracker.task details, including an existing valid ID
-   * @return the updated {@link Task} after replacing the previous com.tasktracker.task
-   * @throws NullPointerException if the provided com.tasktracker.task is {@code null}
-   * @throws IllegalArgumentException if no com.tasktracker.task exists with the specified ID
+   * @param updatedTask the {@link Task} containing the updated details, including a valid ID
+   * @return an {@link Optional} containing the previous {@link Task} details, or an empty {@link
+   *     Optional} if no task with the given ID exists
    */
-  Task updateTask(Task updatedTask) throws NoSuchElementException;
+  Task updateTask(Task updatedTask);
 
   /**
    * Retrieves all tasks stored in the repository.
@@ -57,9 +53,8 @@ public interface TaskRepository {
    * @param id the unique identifier of the com.tasktracker.task to remove from the repository
    * @return an {@link Optional} containing the removed com.tasktracker.task, or an empty {@link
    *     Optional} if no com.tasktracker.task was found for the given ID
-   * @throws IllegalArgumentException if no com.tasktracker.task exists for the specified ID
    */
-  Optional<Task> removeTaskById(int id);
+  Optional<Task> removeTask(int id);
 
   /**
    * Finds tasks that match the given {@link Predicate} criteria.
@@ -75,7 +70,6 @@ public interface TaskRepository {
    *
    * @param taskPredicate the {@link Predicate} used to identify tasks to remove
    * @return {@code true} if any tasks were removed, {@code false} otherwise
-   * @throws NullPointerException if {@code taskPredicate} is {@code null}
    */
   boolean removeMatchingTasks(Predicate<Task> taskPredicate);
 

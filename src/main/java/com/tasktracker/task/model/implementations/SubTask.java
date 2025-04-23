@@ -24,7 +24,6 @@ public final class SubTask extends Task {
    * @param creationDateTime the creation date of the subtask; cannot be null
    * @param updateDateTime the last update time of the subtask; cannot be null
    * @throws ValidationException if any validation rules for parameters fail
-   * @throws NullPointerException if any parameter is null where not allowed
    */
   public SubTask(
       final int id,
@@ -34,7 +33,7 @@ public final class SubTask extends Task {
       final int epicTaskId,
       final LocalDateTime creationDateTime,
       final LocalDateTime updateDateTime)
-      throws ValidationException, NullPointerException {
+      throws ValidationException {
     super(id, title, description, status, creationDateTime, updateDateTime);
     this.epicTaskId = getValidEpicTaskId(epicTaskId);
   }

@@ -3,6 +3,7 @@ package com.tasktracker.task.validation;
 import com.tasktracker.task.dto.*;
 import com.tasktracker.task.validation.validator.*;
 import java.util.Map;
+import java.util.Objects;
 
 public final class ValidatorFactory {
   private static final Map<Class<?>, Validator<?>> VALIDATORS;
@@ -26,8 +27,8 @@ public final class ValidatorFactory {
 
   private ValidatorFactory() {}
 
-  @SuppressWarnings("unchecked")
   public static <T> Validator<T> getValidator(Class<T> clazz) {
+    Objects.requireNonNull(clazz, "Class can't be null");
     Validator<?> validator = VALIDATORS.get(clazz);
     if (validator == null) {
       throw new IllegalArgumentException("No validator for this DTO type: " + clazz);

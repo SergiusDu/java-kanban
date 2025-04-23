@@ -4,6 +4,7 @@ import com.tasktracker.task.model.implementations.Task;
 import com.tasktracker.task.model.implementations.TaskView;
 import com.tasktracker.task.store.HistoryRepository;
 import java.util.Collection;
+import java.util.Optional;
 
 /**
  * The {@code HistoryManager} interface provides mechanisms for managing a history of tasks. It
@@ -26,7 +27,15 @@ public interface HistoryManager {
    *
    * @param task the task to add to the history, must not be {@code null}
    * @return {@code true} if the task was successfully added, otherwise {@code false}
-   * @throws NullPointerException if the provided task is {@code null}
    */
-  boolean add(final Task task);
+  Optional<TaskView> put(final Task task);
+
+  /**
+   * Removes the task view associated with the specified task ID from the history repository.
+   *
+   * @param id the ID of the task to be removed
+   * @return an {@link Optional} containing the removed {@link TaskView} if it existed; otherwise,
+   *     an empty {@link Optional}
+   */
+  Optional<TaskView> remove(int id);
 }
