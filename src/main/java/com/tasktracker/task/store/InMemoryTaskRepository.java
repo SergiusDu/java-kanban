@@ -10,7 +10,7 @@ import java.util.function.Predicate;
  * retrieving, and removing tasks. Tasks are identified by unique integer IDs and stored in an
  * internal map.
  */
-public final class InMemoryTaskRepository implements TaskRepository {
+public class InMemoryTaskRepository implements TaskRepository {
   public static final String TASK_CAN_T_BE_NULL = "Task can't be null";
   private final NavigableMap<Integer, Task> store = new TreeMap<>();
   private final AtomicInteger index = new AtomicInteger(0);

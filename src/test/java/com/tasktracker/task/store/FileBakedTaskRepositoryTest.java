@@ -1,19 +1,21 @@
-package com.tasktracker.task.manager;
+package com.tasktracker.task.store;
 
 import static org.junit.jupiter.api.Assertions.*;
 
 import com.tasktracker.task.dto.*;
 import com.tasktracker.task.exception.ValidationException;
+import com.tasktracker.task.manager.InMemoryHistoryManager;
+import com.tasktracker.task.manager.InMemoryTaskManager;
+import com.tasktracker.task.manager.TaskManager;
 import com.tasktracker.task.model.enums.TaskStatus;
 import com.tasktracker.task.model.implementations.*;
-import com.tasktracker.task.store.InMemoryHistoryRepository;
-import com.tasktracker.task.store.InMemoryTaskRepository;
+import java.nio.file.Paths;
 import java.time.LocalDateTime;
 import java.util.*;
 import org.junit.jupiter.api.*;
 
 /** JUnit5 tests for InMemoryTaskManager covering edge cases and business logic. */
-public class InMemoryTaskManagerTest {
+public class FileBakedTaskRepositoryTest {
 
   // Valid test constants
   private static final String VALID_TITLE = "Valid Task Title";
@@ -27,8 +29,13 @@ public class InMemoryTaskManagerTest {
   void setUp() {
     manager =
         new InMemoryTaskManager(
-            new InMemoryTaskRepository(),
+            new FileBakedTaskRepository(Paths.get("test_data", "task_data.csv")),
             new InMemoryHistoryManager(new InMemoryHistoryRepository()));
+  }
+
+  @AfterEach
+  void cleanUp() {
+    manager.clearAllTasks();
   }
 
   @Test
