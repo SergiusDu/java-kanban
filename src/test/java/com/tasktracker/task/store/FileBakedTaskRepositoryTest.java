@@ -5,8 +5,8 @@ import static org.junit.jupiter.api.Assertions.*;
 import com.tasktracker.task.dto.*;
 import com.tasktracker.task.exception.ValidationException;
 import com.tasktracker.task.manager.InMemoryHistoryManager;
-import com.tasktracker.task.manager.InMemoryTaskManager;
 import com.tasktracker.task.manager.TaskManager;
+import com.tasktracker.task.manager.TaskManagerImpl;
 import com.tasktracker.task.model.enums.TaskStatus;
 import com.tasktracker.task.model.implementations.*;
 import java.nio.file.Paths;
@@ -28,7 +28,7 @@ public class FileBakedTaskRepositoryTest {
   @BeforeEach
   void setUp() {
     manager =
-        new InMemoryTaskManager(
+        new TaskManagerImpl(
             new FileBakedTaskRepository(Paths.get("test_data", "task_data.csv")),
             new InMemoryHistoryManager(new InMemoryHistoryRepository()));
   }
@@ -41,7 +41,7 @@ public class FileBakedTaskRepositoryTest {
   @Test
   @DisplayName("Constructor should throw NullPointerException when TaskRepository is null")
   void testConstructorThrowsOnNullRepository() {
-    assertThrows(NullPointerException.class, () -> new InMemoryTaskManager(null, null));
+    assertThrows(NullPointerException.class, () -> new TaskManagerImpl(null, null));
   }
 
   @Test

@@ -26,7 +26,7 @@ public class InMemoryTaskManagerTest {
   @BeforeEach
   void setUp() {
     manager =
-        new InMemoryTaskManager(
+        new TaskManagerImpl(
             new InMemoryTaskRepository(),
             new InMemoryHistoryManager(new InMemoryHistoryRepository()));
   }
@@ -34,7 +34,7 @@ public class InMemoryTaskManagerTest {
   @Test
   @DisplayName("Constructor should throw NullPointerException when TaskRepository is null")
   void testConstructorThrowsOnNullRepository() {
-    assertThrows(NullPointerException.class, () -> new InMemoryTaskManager(null, null));
+    assertThrows(NullPointerException.class, () -> new TaskManagerImpl(null, null));
   }
 
   @Test

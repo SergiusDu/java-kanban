@@ -85,7 +85,10 @@ public final class FileBakedTaskRepository extends InMemoryTaskRepository
    */
   private void load() throws ManagerSaveException {
     try (final var buff = Files.newBufferedReader(dataFilePath, DEFAULT_CHARSET)) {
-      buff.lines().skip(1).map(TaskCsvMapper::fromCvs).forEach(super::addTask);
+      List<Task> tasks = buff.lines().skip(1).map(TaskCsvMapper::fromCvs).toList();
+      tasks.forEach(this::addTask);
+      int maxId = tasks.stream().mapToInt(Task::getId).max().orElse(0);
+      super.syncIndex(maxId);
     } catch (IOException e) {
       throw new ManagerSaveException("Failed to load tasks from file", e);
     }

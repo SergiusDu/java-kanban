@@ -117,4 +117,15 @@ public class InMemoryTaskRepository implements TaskRepository {
   public int generateId() {
     return this.index.incrementAndGet();
   }
+
+  /**
+   * Sets the internal ID counter to a specific value. This should only be used in special
+   * circumstances like restoring state from a persistent store. The next generated ID will be one
+   * greater than this value.
+   *
+   * @param id The ID value to set the counter to
+   */
+  protected void syncIndex(int id) {
+    this.index.set(id);
+  }
 }
