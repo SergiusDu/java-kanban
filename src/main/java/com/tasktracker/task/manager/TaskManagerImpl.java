@@ -21,17 +21,17 @@ import java.util.stream.Collectors;
  * operations for creating, updating, and removing tasks, as well as managing relationships between
  * tasks like Epic Tasks and their Sub-Tasks.
  */
-public class InMemoryTaskManager implements TaskManager {
+public class TaskManagerImpl<T extends TaskRepository> implements TaskManager {
   public static final String THE_CLASS_TYPE_CANNOT_BE_NULL = "The class type cannot be null.";
-  private final TaskRepository store;
+  private final T store;
   private final HistoryManager historyManager;
 
   /**
-   * Constructs a TaskManager with the given TaskRepository for storing and managing tasks.
+   * Constructs a TaskManager with the given {@link TaskRepository} for storing and managing tasks.
    *
    * @param store the repository used to store and retrieve tasks
    */
-  public InMemoryTaskManager(final TaskRepository store, final HistoryManager historyManager) {
+  public TaskManagerImpl(final T store, final HistoryManager historyManager) {
     this.store = Objects.requireNonNull(store, "TaskRepository cannot be null.");
     this.historyManager = historyManager;
   }

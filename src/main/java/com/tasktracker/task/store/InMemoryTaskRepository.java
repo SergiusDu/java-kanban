@@ -10,7 +10,7 @@ import java.util.function.Predicate;
  * retrieving, and removing tasks. Tasks are identified by unique integer IDs and stored in an
  * internal map.
  */
-public final class InMemoryTaskRepository implements TaskRepository {
+public class InMemoryTaskRepository implements TaskRepository {
   public static final String TASK_CAN_T_BE_NULL = "Task can't be null";
   private final NavigableMap<Integer, Task> store = new TreeMap<>();
   private final AtomicInteger index = new AtomicInteger(0);
@@ -116,5 +116,16 @@ public final class InMemoryTaskRepository implements TaskRepository {
   @Override
   public int generateId() {
     return this.index.incrementAndGet();
+  }
+
+  /**
+   * Sets the internal ID counter to a specific value. This should only be used in special
+   * circumstances like restoring state from a persistent store. The next generated ID will be one
+   * greater than this value.
+   *
+   * @param id The ID value to set the counter to
+   */
+  protected void syncIndex(int id) {
+    this.index.set(id);
   }
 }
