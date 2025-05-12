@@ -1,98 +1,105 @@
 package com.tasktracker.task.store;
 
 import com.tasktracker.task.model.implementations.Task;
+import com.tasktracker.task.store.exception.TaskNotFoundException;
 import java.util.*;
-import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Predicate;
 
 /**
  * A repository for managing {@link Task} objects, providing operations for adding, updating,
- * retrieving, and removing tasks. Tasks are identified by unique integer IDs and stored in an
- * internal map.
+ * retrieving, and removing tasks. Tasks are identified by unique UUIDs and stored in an internal
+ * map.
  */
 public class InMemoryTaskRepository implements TaskRepository {
   public static final String TASK_CAN_T_BE_NULL = "Task can't be null";
-  private final NavigableMap<Integer, Task> store = new TreeMap<>();
-  private final AtomicInteger index = new AtomicInteger(0);
+  private final NavigableMap<UUID, Task> store = new TreeMap<>();
 
   /**
-   * Adds a new task to the repository. The task must inherit from the {@link Task} class.
+   * Adds a new task to the repository. The task must have a unique ID that isn't already present in
+   * the repository.
    *
-   * @param <T> the type of the task being added, which extends {@link Task}
-   * @param task the task to be added to the repository
-   * @return the added task with its current details
+   * @param task the task to add to the repository
+   * @throws NullPointerException if the task is null
+   * @throws IllegalArgumentException if a task with the same ID already exists in the repository
    */
   @Override
-  public <T extends Task> T addTask(final T task) {
+  public void addTask(final Task task) {
     Objects.requireNonNull(task, TASK_CAN_T_BE_NULL);
+    if (store.containsKey(task.getId())) {
+      throw new IllegalArgumentException(
+          String.format("Task with id %s already exists in store", task.getId()));
+    }
     store.put(task.getId(), task);
-    return task;
   }
 
   /**
-   * Updates an existing com.tasktracker.task in the repository with new details. The
-   * com.tasktracker.task to update must have a valid ID already existing in the repository.
+   * Updates an existing task in the repository with the provided updated task data.
    *
-   * @param updatedTask the com.tasktracker.task containing the updated details, including a valid
-   *     ID
-   * @return the updated {@link Task} after applying the changes
+   * @param updatedTask the task containing the updated data, must have an existing ID in the
+   *     repository
+   * @return the previous version of the task that was updated
+   * @throws TaskNotFoundException if no task exists with the ID of the updated task
+   * @throws NullPointerException if the updated task is null
    */
-  public Task updateTask(final Task updatedTask) {
-    Objects.requireNonNull(updatedTask, "Updated com.tasktracker.task can't be null");
-    final int id = updatedTask.getId();
+  public Task updateTask(Task updatedTask) throws TaskNotFoundException {
+    Objects.requireNonNull(updatedTask, "Updated task can't be null");
+    final UUID id = updatedTask.getId();
     if (store.get(id) == null) {
-      throw new IllegalArgumentException("Task with ID " + id + " not found for update.");
+      throw new TaskNotFoundException("Task with ID " + id + " not found for update.");
     }
-    Task updateResult = store.put(id, updatedTask);
-    return updateResult == null ? null : updatedTask;
+    return store.put(id, updatedTask);
   }
 
   /**
    * Retrieves all tasks stored in the repository.
    *
-   * @return an unmodifiable {@link Collection} containing all tasks
+   * @return an unmodifiable Collection containing all tasks
    */
-  public Collection<Task> getAllTasks() {
-    return Collections.unmodifiableCollection(store.values());
+  public List<Task> getAllTasks() {
+    return List.copyOf(store.values());
   }
 
   /**
-   * Retrieves a com.tasktracker.task by its unique identifier.
+   * Retrieves a task by its unique identifier.
    *
-   * @param id the unique identifier of the com.tasktracker.task in the repository
-   * @return an {@link Optional} containing the com.tasktracker.task if it exists, or an empty
-   *     {@link Optional} if it does not
+   * @param id the unique identifier of the task in the repository
+   * @return an Optional containing the task if it exists, or an empty Optional if it does not
    */
-  public Optional<Task> getTaskById(final int id) {
+  public Optional<Task> getTaskById(final UUID id) {
     return Optional.ofNullable(store.get(id));
   }
 
   /**
-   * Removes a com.tasktracker.task from the repository by its unique identifier.
+   * Removes a task from the repository by its unique identifier.
    *
-   * @param id the unique identifier of the com.tasktracker.task to remove from the repository
-   * @return an {@link Optional} containing the removed com.tasktracker.task, or an empty {@link
-   *     Optional} if no com.tasktracker.task was found for the given ID
+   * @param id the unique identifier of the task to remove from the repository
+   * @return an Optional containing the removed task, or an empty Optional if no task was found with
+   *     the given ID
+   * @throws NullPointerException if id is null
    */
-  public Optional<Task> removeTask(final int id) {
+  public Optional<Task> removeTask(final UUID id) {
     return Optional.ofNullable(store.remove(id));
   }
 
   /**
-   * Finds tasks that match the given taskPredicate criteria.
+   * Finds tasks that match the given predicate criteria.
    *
-   * @param taskPredicate the {@link Predicate} to apply to each com.tasktracker.task for filtering
-   * @return a {@link Collection} of tasks that satisfy the given {@link Predicate}; an empty list
-   *     if no such tasks exist
+   * @param taskPredicate the predicate to apply to each task for filtering
+   * @return a Collection of tasks that satisfy the given predicate; an empty list if no such tasks
+   *     exist
+   * @throws NullPointerException if the taskPredicate is null
    */
   public Collection<Task> findTasksMatching(final Predicate<Task> taskPredicate) {
+    Objects.requireNonNull(taskPredicate);
     return store.values().stream().filter(taskPredicate).toList();
   }
 
   /**
-   * Removes tasks from the repository that satisfy the given taskPredicate condition.
+   * Removes tasks from the repository that satisfy the given predicate condition.
    *
-   * @param taskPredicate the {@link Predicate} used to identify tasks to remove
+   * @param taskPredicate the predicate used to identify tasks to remove
+   * @return true if any tasks were removed, false otherwise
+   * @throws NullPointerException if the specified predicate is null
    */
   public boolean removeMatchingTasks(final Predicate<Task> taskPredicate) {
     Objects.requireNonNull(taskPredicate);
@@ -101,31 +108,9 @@ public class InMemoryTaskRepository implements TaskRepository {
 
   /**
    * Clears all tasks from the repository, permanently deleting all stored data. After this
-   * operation is performed, the repository will be empty. This action is irreversible.
+   * operation is performed, the repository will be empty.
    */
   public void clearAllTasks() {
     store.clear();
-  }
-
-  /**
-   * Generates a unique integer ID for a new {@link Task}. The ID is incremented atomically and
-   * guaranteed to be unique across all tasks in the repository. The first ID generated is 1.
-   *
-   * @return a unique integer ID for the new {@link Task}
-   */
-  @Override
-  public int generateId() {
-    return this.index.incrementAndGet();
-  }
-
-  /**
-   * Sets the internal ID counter to a specific value. This should only be used in special
-   * circumstances like restoring state from a persistent store. The next generated ID will be one
-   * greater than this value.
-   *
-   * @param id The ID value to set the counter to
-   */
-  protected void syncIndex(int id) {
-    this.index.set(id);
   }
 }

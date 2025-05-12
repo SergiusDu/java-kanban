@@ -2,7 +2,7 @@ package com.tasktracker.task.exception;
 
 import java.util.List;
 
-public class ValidationException extends RuntimeException {
+public class ValidationException extends Exception {
   private final List<String> errors;
 
   public ValidationException(List<String> errors) {

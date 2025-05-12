@@ -2,32 +2,32 @@ package com.tasktracker.task.manager;
 
 import com.tasktracker.task.model.implementations.Task;
 import com.tasktracker.task.model.implementations.TaskView;
-import com.tasktracker.task.store.HistoryRepository;
+import com.tasktracker.task.store.HistoryStore;
 import java.time.LocalDateTime;
 import java.util.*;
 
 /**
- * A manager implementation that handles task history in memory. It uses a {@link HistoryRepository}
- * for storing and managing task views, ensuring efficient history management.
+ * A manager implementation that handles task history in memory. It uses a {@link HistoryStore} for
+ * storing and managing task views, ensuring efficient history management.
  */
 public class InMemoryHistoryManager implements HistoryManager {
-  private final HistoryRepository historyStore;
+  private final HistoryStore historyStore;
 
   /**
-   * Constructs an {@code InMemoryHistoryManager} with the specified {@link HistoryRepository}.
-   * Ensures the provided history repository is not null.
+   * Constructs an {@code InMemoryHistoryManager} with the specified {@link HistoryStore}. Ensures
+   * the provided history repository is not null.
    *
-   * @param historyStore the {@link HistoryRepository} used for managing the task history; must not
-   *     be {@code null}
+   * @param historyStore the {@link HistoryStore} used for managing the task history; must not be
+   *     {@code null}
    */
-  public InMemoryHistoryManager(final HistoryRepository historyStore) {
+  public InMemoryHistoryManager(final HistoryStore historyStore) {
     Objects.requireNonNull(historyStore, "History Repository can't be null");
     this.historyStore = historyStore;
   }
 
   /**
    * Retrieves the complete history of tasks as a collection of {@link TaskView} objects. This
-   * includes only tasks currently stored in the {@link HistoryRepository}.
+   * includes only tasks currently stored in the {@link HistoryStore}.
    *
    * @return a collection of {@link TaskView} objects representing the task history
    */
@@ -59,7 +59,7 @@ public class InMemoryHistoryManager implements HistoryManager {
    *     an empty {@link Optional}
    */
   @Override
-  public Optional<TaskView> remove(int id) {
+  public Optional<TaskView> remove(UUID id) {
     return historyStore.remove(id);
   }
 }

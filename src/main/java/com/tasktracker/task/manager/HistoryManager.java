@@ -2,9 +2,10 @@ package com.tasktracker.task.manager;
 
 import com.tasktracker.task.model.implementations.Task;
 import com.tasktracker.task.model.implementations.TaskView;
-import com.tasktracker.task.store.HistoryRepository;
+import com.tasktracker.task.store.HistoryStore;
 import java.util.Collection;
 import java.util.Optional;
+import java.util.UUID;
 
 /**
  * The {@code HistoryManager} interface provides mechanisms for managing a history of tasks. It
@@ -14,7 +15,7 @@ public interface HistoryManager {
 
   /**
    * Retrieves the complete history of tasks as a collection of {@link TaskView} objects. This
-   * includes only tasks currently stored in the {@link HistoryRepository}.
+   * includes only tasks currently stored in the {@link HistoryStore}.
    *
    * @return a collection of {@link TaskView} objects representing the task history
    */
@@ -37,5 +38,5 @@ public interface HistoryManager {
    * @return an {@link Optional} containing the removed {@link TaskView} if it existed; otherwise,
    *     an empty {@link Optional}
    */
-  Optional<TaskView> remove(int id);
+  Optional<TaskView> remove(UUID id);
 }

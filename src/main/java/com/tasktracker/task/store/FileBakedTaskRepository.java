@@ -1,8 +1,10 @@
 package com.tasktracker.task.store;
 
 import com.tasktracker.cvs.TaskCsvMapper;
+import com.tasktracker.cvs.exceptions.CvsMapperException;
 import com.tasktracker.task.exception.ManagerSaveException;
 import com.tasktracker.task.model.implementations.Task;
+import com.tasktracker.task.store.exception.TaskNotFoundException;
 import java.io.IOException;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
@@ -12,175 +14,163 @@ import java.util.*;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
-/**
- * A task repository implementation that persists tasks to a CSV file. This repository extends
- * InMemoryTaskRepository and adds file-based storage functionality, automatically saving changes to
- * disk after each modification operation.
- */
 public final class FileBakedTaskRepository extends InMemoryTaskRepository
     implements TaskRepository {
   private static final Charset DEFAULT_CHARSET = StandardCharsets.UTF_8;
   private final Path dataFilePath;
 
-  /**
-   * Creates a new FileBakedTaskRepository that stores tasks in the specified CSV file. Tasks will
-   * be loaded from the file if it exists, or the file will be created if it doesn't exist.
-   *
-   * @param dataFilePath Path to the CSV file for task persistence
-   * @throws ManagerSaveException if there are errors creating/accessing the file or loading tasks
-   * @throws NullPointerException if dataFilePath is null
-   */
   public FileBakedTaskRepository(Path dataFilePath) {
     this.dataFilePath = Objects.requireNonNull(dataFilePath, "Data file path can't be null.");
     ensureDataFileExists();
-    load();
+    loadFromFileToMemory();
   }
 
-  /**
-   * Ensures that the data file and its parent directories exist, creating them if necessary.
-   *
-   * <p>This method performs the following:
-   *
-   * <ul>
-   *   <li>Validates that dataFilePath is not null
-   *   <li>Creates any missing parent directories recursively
-   *   <li>Creates the target data file if it doesn't exist
-   * </ul>
-   *
-   * @throws ManagerSaveException if an I/O error occurs when creating directories or file
-   * @throws NullPointerException if dataFilePath is null
-   */
   private void ensureDataFileExists() throws ManagerSaveException {
     Objects.requireNonNull(dataFilePath, "Data file path can't be null");
     final Path parent = dataFilePath.getParent();
     try {
-      Files.createDirectories(parent);
+      if (parent != null) {
+        Files.createDirectories(parent);
+      }
       if (Files.notExists(dataFilePath)) {
         Files.createFile(dataFilePath);
+        writeFile(TaskCsvMapper.CSV_HEADER + "\n");
+      } else if (Files.size(dataFilePath) == 0) {
+        writeFile(TaskCsvMapper.CSV_HEADER + "\n");
       }
     } catch (IOException e) {
-      throw new ManagerSaveException("Failed to create task's file.", e);
+      throw new ManagerSaveException("Failed to create or prepare task's file: " + dataFilePath, e);
     }
   }
 
-  /**
-   * Writes the provided content to the repository's data file.
-   *
-   * @param content the string content to write to the file
-   * @throws ManagerSaveException if writing to the file fails
-   */
   private void writeFile(final String content) throws ManagerSaveException {
     try (final var buff = Files.newBufferedWriter(dataFilePath, DEFAULT_CHARSET)) {
       buff.write(content);
     } catch (IOException e) {
-      throw new ManagerSaveException("Failed to save tasks to file.", e);
+      throw new ManagerSaveException("Failed to save tasks to file: " + dataFilePath, e);
     }
   }
 
-  /**
-   * Loads tasks from the data file into memory. Skips the header line and converts each CSV line to
-   * a Task object.
-   *
-   * @throws ManagerSaveException if reading from the file fails
-   */
-  private void load() throws ManagerSaveException {
-    try (final var buff = Files.newBufferedReader(dataFilePath, DEFAULT_CHARSET)) {
-      List<Task> tasks = buff.lines().skip(1).map(TaskCsvMapper::fromCvs).toList();
-      tasks.forEach(this::addTask);
-      int maxId = tasks.stream().mapToInt(Task::getId).max().orElse(0);
-      super.syncIndex(maxId);
+  private void loadFromFileToMemory() throws ManagerSaveException {
+    super.clearAllTasks();
+
+    List<String> lines;
+    try {
+      lines = Files.readAllLines(dataFilePath, DEFAULT_CHARSET);
     } catch (IOException e) {
-      throw new ManagerSaveException("Failed to load tasks from file", e);
+      if (Files.exists(dataFilePath)) {
+        try {
+          if (Files.size(dataFilePath)
+              <= (TaskCsvMapper.CSV_HEADER.getBytes(DEFAULT_CHARSET).length
+                  + System.lineSeparator().getBytes(DEFAULT_CHARSET).length)) {
+            return;
+          }
+        } catch (IOException ex) {
+          throw new ManagerSaveException(
+              "Failed to read tasks from file (checking size failed): " + dataFilePath, ex);
+        }
+      }
+      throw new ManagerSaveException("Failed to read tasks from file: " + dataFilePath, e);
+    }
+
+    if (lines.isEmpty() || !lines.get(0).trim().equals(TaskCsvMapper.CSV_HEADER.trim())) {
+      if (!lines.isEmpty()) {
+        System.err.println(
+            "Warning: CSV file "
+                + dataFilePath
+                + " is missing a valid header. Starting with an empty repository.");
+      }
+      return;
+    }
+
+    List<Task> tasksFromFile =
+        lines.stream()
+            .skip(1)
+            .filter(line -> !line.isBlank())
+            .map(
+                line -> {
+                  try {
+                    return TaskCsvMapper.fromCsv(line);
+                  } catch (CvsMapperException e) {
+                    System.err.println(
+                        "Skipping malformed CSV line during load: ["
+                            + line
+                            + "]. Error: "
+                            + e.getMessage());
+                    return null;
+                  }
+                })
+            .filter(Objects::nonNull)
+            .collect(Collectors.toList());
+
+    for (Task task : tasksFromFile) {
+      try {
+        super.addTask(task);
+      } catch (IllegalArgumentException e) {
+        System.err.println(
+            "Error adding task from file (possible duplicate ID in CSV): "
+                + task.getId()
+                + " - "
+                + e.getMessage());
+      }
     }
   }
 
-  /**
-   * Saves all tasks from memory to the data file in CSV format. Includes a header line followed by
-   * task data.
-   *
-   * @throws ManagerSaveException if saving to the file fails
-   */
   private void save() throws ManagerSaveException {
+    Collection<Task> tasksToSave = super.getAllTasks();
     final String csvContent =
         TaskCsvMapper.CSV_HEADER
             + "\n"
-            + super.getAllTasks().stream()
-                .map(TaskCsvMapper::toCvs)
-                .collect(Collectors.joining("\n"));
+            + tasksToSave.stream().map(TaskCsvMapper::toCsv).collect(Collectors.joining("\n"));
     writeFile(csvContent);
   }
 
-  /**
-   * {@inheritDoc} The task is also persisted to the data file.
-   *
-   * @throws ManagerSaveException if saving to the file fails
-   */
   @Override
-  public <T extends Task> T addTask(final T task) {
-    var result = super.addTask(task);
+  public void addTask(final Task task) {
+    super.addTask(task);
     save();
-    return result;
   }
 
-  /**
-   * {@inheritDoc} The updated task is also persisted to the data file.
-   *
-   * @throws ManagerSaveException if saving to the file fails
-   */
   @Override
-  public Task updateTask(final Task updatedTask) {
+  public Task updateTask(final Task updatedTask) throws TaskNotFoundException {
     final var result = super.updateTask(updatedTask);
     save();
     return result;
   }
 
   @Override
-  public Collection<Task> getAllTasks() {
-    load();
+  public List<Task> getAllTasks() {
     return super.getAllTasks();
   }
 
   @Override
-  public Optional<Task> getTaskById(int id) {
-    load();
+  public Optional<Task> getTaskById(UUID id) {
     return super.getTaskById(id);
-  }
-
-  /**
-   * {@inheritDoc} The removal is also persisted to the data file.
-   *
-   * @throws ManagerSaveException if saving to the file fails
-   */
-  @Override
-  public Optional<Task> removeTask(final int id) {
-    final var result = super.removeTask(id);
-    save();
-    return result;
   }
 
   @Override
   public Collection<Task> findTasksMatching(Predicate<Task> taskPredicate) {
-    load();
     return super.findTasksMatching(taskPredicate);
   }
 
-  /**
-   * {@inheritDoc} The removal is also persisted to the data file.
-   *
-   * @throws ManagerSaveException if saving to the file fails
-   */
   @Override
-  public boolean removeMatchingTasks(final Predicate<Task> taskPredicate) {
-    final var result = super.removeMatchingTasks(taskPredicate);
-    save();
+  public Optional<Task> removeTask(final UUID id) {
+    final var result = super.removeTask(id);
+    if (result.isPresent()) {
+      save();
+    }
     return result;
   }
 
-  /**
-   * {@inheritDoc} The cleared state is also persisted to the data file.
-   *
-   * @throws ManagerSaveException if saving to the file fails
-   */
+  @Override
+  public boolean removeMatchingTasks(final Predicate<Task> taskPredicate) {
+    final var result = super.removeMatchingTasks(taskPredicate);
+    if (result) {
+      save();
+    }
+    return result;
+  }
+
   @Override
   public void clearAllTasks() {
     super.clearAllTasks();

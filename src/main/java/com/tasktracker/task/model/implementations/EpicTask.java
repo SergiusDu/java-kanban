@@ -2,8 +2,10 @@ package com.tasktracker.task.model.implementations;
 
 import com.tasktracker.task.exception.ValidationException;
 import com.tasktracker.task.model.enums.TaskStatus;
+import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.Set;
+import java.util.UUID;
 
 /**
  * Represents an overarching com.tasktracker.task model that can contain subtasks. Extends the
@@ -11,7 +13,7 @@ import java.util.Set;
  */
 public final class EpicTask extends Task {
   /** A set of IDs representing the subtasks associated with this epic com.tasktracker.task. */
-  private final Set<Integer> subtaskIds;
+  private final Set<UUID> subtaskIds;
 
   /**
    * Constructs a new {@code EpicTask} instance with the specified parameters.
@@ -25,19 +27,23 @@ public final class EpicTask extends Task {
    *     contain negative values
    * @param creationDateTime the creation date of the task; cannot be null
    * @param updateDateTime the last update time of the task; cannot be null
+   * @param startTime the scheduled start time for the task; can be null
+   * @param duration the planned duration of the task; can be null
    * @throws ValidationException if any validation criteria are not met
    */
   public EpicTask(
-      final int id,
+      final UUID id,
       final String title,
       final String description,
       final TaskStatus status,
-      final Set<Integer> subtaskIds,
+      final Set<UUID> subtaskIds,
       final LocalDateTime creationDateTime,
-      final LocalDateTime updateDateTime)
+      final LocalDateTime updateDateTime,
+      final LocalDateTime startTime,
+      final Duration duration)
       throws ValidationException {
-    super(id, title, description, status, creationDateTime, updateDateTime);
-    this.subtaskIds = getValidatedSubTaskIds(subtaskIds);
+    super(id, title, description, status, creationDateTime, updateDateTime, startTime, duration);
+    this.subtaskIds = Set.copyOf(subtaskIds);
   }
 
   /**
@@ -46,23 +52,7 @@ public final class EpicTask extends Task {
    *
    * @return a read-only view of the subtask IDs
    */
-  public Set<Integer> getSubtaskIds() {
-    return Set.copyOf(subtaskIds);
-  }
-
-  /**
-   * Validates the provided set of subtask IDs to ensure they do not contain negative values.
-   *
-   * @param subtaskIds the set of subtask IDs to validate
-   * @return a validated, unmodifiable copy of the subtask IDs
-   * @throws ValidationException if any of the subtask IDs are negative
-   */
-  private Set<Integer> getValidatedSubTaskIds(final Set<Integer> subtaskIds) {
-    if (subtaskIds.isEmpty()) return Set.of();
-    boolean isValidated = subtaskIds.stream().anyMatch(subtaskId -> subtaskId < 0);
-    if (isValidated) {
-      throw new ValidationException("Subtask IDs cannot contain negative values.");
-    }
+  public Set<UUID> getSubtaskIds() {
     return Set.copyOf(subtaskIds);
   }
 

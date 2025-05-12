@@ -1,6 +1,7 @@
 package com.tasktracker.collections;
 
 import java.util.*;
+import java.util.function.Function;
 
 public class CustomLinkedHashMap<K, V>
     implements SequencedMap<K, V>, Iterable<V>, Comparable<CustomLinkedHashMap<K, V>> {
@@ -10,6 +11,8 @@ public class CustomLinkedHashMap<K, V>
   public static final String VALUE_CAN_T_BE_NULL = "value can't be null";
   public static final String NODE_CAN_T_BE_NULL = "node can't be null";
   public static final String MAP_IS_EMPTY_GET_FIRST_KEY = "Map is empty (getFirst key)";
+  public static final String MAP_IS_EMPTY_GET_LAST_KEY = "Map is empty (getLast key)";
+
   private final HashMap<K, Node<K, V>> hashMap = new HashMap<>();
   private EntrySetView entrySetView = null;
   private ReversedCustomLinkedHashMapView<K, V> reversedMapView = null;
@@ -27,13 +30,13 @@ public class CustomLinkedHashMap<K, V>
   }
 
   @Override
-  public Entry<K, V> firstEntry() {
+  public Map.Entry<K, V> firstEntry() {
     if (firstNode == null) return null;
     return firstNode.getImmutableEntry();
   }
 
   @Override
-  public Entry<K, V> lastEntry() {
+  public Map.Entry<K, V> lastEntry() {
     if (lastNode == null) return null;
     return lastNode.getImmutableEntry();
   }
@@ -46,40 +49,42 @@ public class CustomLinkedHashMap<K, V>
   }
 
   @Override
-  public Entry<K, V> pollFirstEntry() {
+  public Map.Entry<K, V> pollFirstEntry() {
     return pollNodeAndGetEntry(firstNode);
   }
 
   @Override
-  public Entry<K, V> pollLastEntry() {
+  public Map.Entry<K, V> pollLastEntry() {
     return pollNodeAndGetEntry(lastNode);
   }
 
   private V putInPosition(K k, V v, boolean atFront) {
     Objects.requireNonNull(k, KEY_CAN_T_BE_NULL);
     Objects.requireNonNull(v, VALUE_CAN_T_BE_NULL);
-    final var replacedNode = hashMap.get(k);
-    if (replacedNode != null) {
-      var oldValue = replacedNode.getValue();
-      replacedNode.setValue(v);
+    final Node<K, V> existingNode = hashMap.get(k);
+
+    if (existingNode != null) {
+      V oldValue = existingNode.getValue();
+      existingNode.setValue(v);
       return oldValue;
     }
+
     final var newNode = new Node<>(k, v, null, null);
-    if (hashMap.isEmpty()) {
+    hashMap.put(k, newNode);
+
+    if (firstNode == null) {
       firstNode = newNode;
       lastNode = newNode;
-      hashMap.put(k, newNode);
     } else {
       if (atFront) {
-        firstNode.setPrevious(newNode);
         newNode.setNext(firstNode);
+        firstNode.setPrevious(newNode);
         firstNode = newNode;
       } else {
-        lastNode.setNext(newNode);
         newNode.setPrevious(lastNode);
+        lastNode.setNext(newNode);
         lastNode = newNode;
       }
-      hashMap.put(k, newNode);
     }
     return null;
   }
@@ -130,21 +135,24 @@ public class CustomLinkedHashMap<K, V>
   public V put(K key, V value) {
     Objects.requireNonNull(key, KEY_CAN_T_BE_NULL);
     Objects.requireNonNull(value, VALUE_CAN_T_BE_NULL);
-    var newNode = new Node<>(key, value, null, lastNode);
-    if (hashMap.isEmpty()) {
+
+    Node<K, V> existingNode = hashMap.get(key);
+
+    if (existingNode != null) {
+      V oldValue = existingNode.getValue();
+      existingNode.setValue(value);
+
+      if (existingNode != lastNode) {
+        unlinkNode(existingNode);
+        linkNodeAtEnd(existingNode);
+      }
+      return oldValue;
+    } else {
+      Node<K, V> newNode = new Node<>(key, value, null, null);
       hashMap.put(key, newNode);
-      lastNode = newNode;
-      firstNode = newNode;
+      linkNodeAtEnd(newNode);
       return null;
     }
-    var removedNode = hashMap.put(key, newNode);
-    if (removedNode != null) {
-      replaceNode(removedNode, newNode);
-      return removedNode.getValue();
-    }
-    lastNode.setNext(newNode);
-    lastNode = newNode;
-    return null;
   }
 
   @Override
@@ -159,35 +167,54 @@ public class CustomLinkedHashMap<K, V>
   }
 
   private void unlinkNode(Node<K, V> node) {
-    Objects.requireNonNull(node, NODE_CAN_T_BE_NULL);
-    var previousNode = node.getPrevious();
-    var nextNode = node.getNext();
-    if (previousNode != null) {
-      previousNode.setNext(nextNode);
+    final Node<K, V> prev = node.getPrevious();
+    final Node<K, V> next = node.getNext();
+
+    if (prev == null) {
+      firstNode = next;
     } else {
-      firstNode = nextNode;
+      prev.setNext(next);
+      node.setPrevious(null);
     }
-    if (nextNode != null) {
-      nextNode.setPrevious(previousNode);
+
+    if (next == null) {
+      lastNode = prev;
     } else {
-      lastNode = previousNode;
+      next.setPrevious(prev);
+      node.setNext(null);
     }
+  }
+
+  private void linkNodeAtEnd(Node<K, V> node) {
+    node.setPrevious(lastNode);
+    node.setNext(null);
+
+    if (lastNode == null) {
+      firstNode = node;
+    } else {
+      lastNode.setNext(node);
+    }
+    lastNode = node;
   }
 
   private void replaceNode(Node<K, V> nodeToUnlink, Node<K, V> nodeToInsert) {
     Objects.requireNonNull(nodeToUnlink, "nodeToUnlink can't be Null");
     Objects.requireNonNull(nodeToInsert, "nodeToInsert can't be Null");
+
     var previousNode = nodeToUnlink.getPrevious();
     var nextNode = nodeToUnlink.getNext();
+
+    nodeToInsert.setPrevious(previousNode);
+    nodeToInsert.setNext(nextNode);
+
     if (previousNode != null) {
       previousNode.setNext(nodeToInsert);
-      nodeToInsert.setPrevious(previousNode);
     } else {
       firstNode = nodeToInsert;
     }
+
     if (nextNode != null) {
       nextNode.setPrevious(nodeToInsert);
-      nodeToInsert.setNext(nextNode);
     } else {
       lastNode = nodeToInsert;
     }
@@ -198,9 +225,13 @@ public class CustomLinkedHashMap<K, V>
     hashMap.clear();
     firstNode = null;
     lastNode = null;
+    if (reversedMapView != null) reversedMapView.clearOriginalMapReference();
     reversedMapView = null;
+    if (valuesView != null) valuesView.clearInternalState();
     valuesView = null;
+    if (entrySetView != null) entrySetView.clearInternalState();
     entrySetView = null;
+    if (keySetView != null) keySetView.clearInternalState();
     keySetView = null;
   }
 
@@ -221,7 +252,7 @@ public class CustomLinkedHashMap<K, V>
   }
 
   @Override
-  public SequencedSet<Entry<K, V>> entrySet() {
+  public SequencedSet<Map.Entry<K, V>> entrySet() {
     if (entrySetView == null) {
       entrySetView = new EntrySetView();
     }
@@ -232,7 +263,7 @@ public class CustomLinkedHashMap<K, V>
   public void putAll(Map<? extends K, ? extends V> m) {
     Objects.requireNonNull(m);
     for (Map.Entry<? extends K, ? extends V> e : m.entrySet()) {
-      this.putLast(e.getKey(), e.getValue());
+      this.put(e.getKey(), e.getValue());
     }
   }
 
@@ -248,9 +279,7 @@ public class CustomLinkedHashMap<K, V>
   }
 
   private <T> T getElementFromSequencedNode(
-      Node<K, V> node,
-      java.util.function.Function<Node<K, V>, T> extractor,
-      String exceptionMessage) {
+      Node<K, V> node, Function<Node<K, V>, T> extractor, String exceptionMessage) {
     if (node == null) {
       throw new NoSuchElementException(exceptionMessage);
     }
@@ -282,6 +311,7 @@ public class CustomLinkedHashMap<K, V>
     if (obj == this) return true;
     if (!(obj instanceof Map<?, ?> m)) return false;
     if (m.size() != size()) return false;
+
     try {
       for (Map.Entry<K, V> e : entrySet()) {
         K key = e.getKey();
@@ -292,7 +322,7 @@ public class CustomLinkedHashMap<K, V>
           if (!value.equals(m.get(key))) return false;
         }
       }
-    } catch (ClassCastException unused) {
+    } catch (ClassCastException | NullPointerException unused) {
       return false;
     }
     return true;
@@ -300,7 +330,6 @@ public class CustomLinkedHashMap<K, V>
 
   private static class Node<K, V> {
     private final K key;
-
     private V value;
     private Node<K, V> next;
     private Node<K, V> previous;
@@ -353,28 +382,30 @@ public class CustomLinkedHashMap<K, V>
       this.originalMap = original;
     }
 
+    void clearOriginalMapReference() {}
+
     @Override
     public SequencedMap<K, V> reversed() {
       return originalMap;
     }
 
     @Override
-    public Entry<K, V> firstEntry() {
+    public Map.Entry<K, V> firstEntry() {
       return originalMap.lastEntry();
     }
 
     @Override
-    public Entry<K, V> lastEntry() {
+    public Map.Entry<K, V> lastEntry() {
       return originalMap.firstEntry();
     }
 
     @Override
-    public Entry<K, V> pollFirstEntry() {
+    public Map.Entry<K, V> pollFirstEntry() {
       return originalMap.pollLastEntry();
     }
 
     @Override
-    public Entry<K, V> pollLastEntry() {
+    public Map.Entry<K, V> pollLastEntry() {
       return originalMap.pollFirstEntry();
     }
 
@@ -415,7 +446,25 @@ public class CustomLinkedHashMap<K, V>
 
     @Override
     public V put(K key, V value) {
-      return originalMap.putFirst(key, value);
+      Node<K, V> existingNode = originalMap.hashMap.get(key);
+      if (existingNode != null) {
+        V oldValue = existingNode.getValue();
+        existingNode.setValue(value);
+        if (existingNode != originalMap.firstNode) {
+          originalMap.unlinkNode(existingNode);
+          existingNode.setNext(originalMap.firstNode);
+          existingNode.setPrevious(null);
+          if (originalMap.firstNode != null) {
+            originalMap.firstNode.setPrevious(existingNode);
+          } else {
+            originalMap.lastNode = existingNode;
+          }
+          originalMap.firstNode = existingNode;
+        }
+        return oldValue;
+      } else {
+        return originalMap.putFirst(key, value);
+      }
     }
 
     @Override
@@ -447,7 +496,7 @@ public class CustomLinkedHashMap<K, V>
     }
 
     @Override
-    public Set<Entry<K, V>> entrySet() {
+    public Set<Map.Entry<K, V>> entrySet() {
       return originalMap.entrySet().reversed();
     }
 
@@ -464,13 +513,21 @@ public class CustomLinkedHashMap<K, V>
     @Override
     public boolean equals(Object obj) {
       if (obj == this) return true;
-      if (!(obj instanceof Map<?, ?>)) return false;
+      if (!(obj instanceof Map<?, ?> m)) return false;
       return originalMap.equals(obj);
     }
   }
 
+  private abstract class AbstractSequencedView<T> {
+    void clearInternalState() {}
+  }
+
   private class ValuesView extends AbstractCollection<V> implements SequencedCollection<V> {
     private ReversedValuesView reversedValuesView = null;
+
+    void clearInternalState() {
+      reversedValuesView = null;
+    }
 
     @Override
     public Iterator<V> iterator() {
@@ -542,8 +599,11 @@ public class CustomLinkedHashMap<K, V>
   }
 
   private final class KeySetView extends AbstractSet<K> implements SequencedSet<K> {
-    public static final String MAP_IS_EMPTY_GET_LAST_KEY = "Map is empty (getLast key)";
-    ReversedKeySetView reversedKeySetView = null;
+    private ReversedKeySetView reversedKeySetView = null;
+
+    void clearInternalState() {
+      reversedKeySetView = null;
+    }
 
     @Override
     public Iterator<K> iterator() {
@@ -594,11 +654,6 @@ public class CustomLinkedHashMap<K, V>
           CustomLinkedHashMap.this.lastNode, Node::getKey, MAP_IS_EMPTY_GET_LAST_KEY);
     }
 
-    @Override
-    public int hashCode() {
-      return super.hashCode();
-    }
-
     private final class ReversedKeySetView extends AbstractSet<K> implements SequencedSet<K> {
       @Override
       public Iterator<K> iterator() {
@@ -617,11 +672,11 @@ public class CustomLinkedHashMap<K, V>
 
       @Override
       public boolean remove(Object o) {
-        final boolean contains = CustomLinkedHashMap.this.containsKey(o);
-        if (contains) {
+        final boolean contained = CustomLinkedHashMap.this.containsKey(o);
+        if (contained) {
           CustomLinkedHashMap.this.remove(o);
         }
-        return contains;
+        return contained;
       }
 
       @Override
@@ -631,7 +686,7 @@ public class CustomLinkedHashMap<K, V>
 
       @Override
       public SequencedSet<K> reversed() {
-        return CustomLinkedHashMap.this.keySet();
+        return KeySetView.this;
       }
 
       @Override
@@ -652,6 +707,10 @@ public class CustomLinkedHashMap<K, V>
       implements SequencedSet<Map.Entry<K, V>> {
     private ReversedEntrySetView reversedEntrySetView = null;
 
+    void clearInternalState() {
+      reversedEntrySetView = null;
+    }
+
     @Override
     public Iterator<Map.Entry<K, V>> iterator() {
       return new LinkedIterator<>(
@@ -665,35 +724,19 @@ public class CustomLinkedHashMap<K, V>
 
     @Override
     public boolean contains(Object o) {
-      return containsEntry(o);
-    }
-
-    private boolean containsEntry(Object o) {
-      if (!(o instanceof Map.Entry<?, ?>)) {
+      if (!(o instanceof Map.Entry<?, ?> entry)) {
         return false;
       }
-      Object key = ((Entry<?, ?>) o).getKey();
-      Node<K, V> node = CustomLinkedHashMap.this.hashMap.get(key);
-      return node != null && Objects.equals(node.getValue(), ((Entry<?, ?>) o).getValue());
+      Node<K, V> node = CustomLinkedHashMap.this.hashMap.get(entry.getKey());
+      return node != null && Objects.equals(node.getValue(), entry.getValue());
     }
 
     @Override
     public boolean remove(Object o) {
-      return removeEntry(o);
-    }
-
-    private boolean removeEntry(Object o) {
       if (!(o instanceof Map.Entry<?, ?> entry)) {
         return false;
       }
-      Object key = entry.getKey();
-      Node<K, V> node = CustomLinkedHashMap.this.hashMap.get(key);
-
-      if (node != null && Objects.equals(node.getValue(), entry.getValue())) {
-        CustomLinkedHashMap.this.remove(key);
-        return true;
-      }
-      return false;
+      return CustomLinkedHashMap.this.remove(entry.getKey(), entry.getValue());
     }
 
     @Override
@@ -727,9 +770,8 @@ public class CustomLinkedHashMap<K, V>
 
     private final class ReversedEntrySetView extends AbstractSet<Map.Entry<K, V>>
         implements SequencedSet<Map.Entry<K, V>> {
-
       @Override
-      public Iterator<Entry<K, V>> iterator() {
+      public Iterator<Map.Entry<K, V>> iterator() {
         return new LinkedIterator<>(
             CustomLinkedHashMap.this.lastNode, false, Node::getImmutableEntry);
       }
@@ -741,12 +783,12 @@ public class CustomLinkedHashMap<K, V>
 
       @Override
       public boolean contains(Object o) {
-        return containsEntry(o);
+        return EntrySetView.this.contains(o);
       }
 
       @Override
       public boolean remove(Object o) {
-        return removeEntry(o);
+        return EntrySetView.this.remove(o);
       }
 
       @Override
@@ -755,12 +797,12 @@ public class CustomLinkedHashMap<K, V>
       }
 
       @Override
-      public SequencedSet<Entry<K, V>> reversed() {
-        return CustomLinkedHashMap.this.entrySet();
+      public SequencedSet<Map.Entry<K, V>> reversed() {
+        return EntrySetView.this;
       }
 
       @Override
-      public Entry<K, V> getFirst() {
+      public Map.Entry<K, V> getFirst() {
         return getElementFromSequencedNode(
             CustomLinkedHashMap.this.lastNode,
             Node::getImmutableEntry,
@@ -768,7 +810,7 @@ public class CustomLinkedHashMap<K, V>
       }
 
       @Override
-      public Entry<K, V> getLast() {
+      public Map.Entry<K, V> getLast() {
         return getElementFromSequencedNode(
             CustomLinkedHashMap.this.firstNode,
             Node::getImmutableEntry,
@@ -779,14 +821,12 @@ public class CustomLinkedHashMap<K, V>
 
   private class LinkedIterator<T> implements Iterator<T> {
     private final boolean forward;
-    private final java.util.function.Function<Node<K, V>, T> elementExtractor;
+    private final Function<Node<K, V>, T> elementExtractor;
     private Node<K, V> nextNode;
     private Node<K, V> lastReturnedNode;
 
     LinkedIterator(
-        Node<K, V> startNode,
-        boolean forward,
-        java.util.function.Function<Node<K, V>, T> elementExtractor) {
+        Node<K, V> startNode, boolean forward, Function<Node<K, V>, T> elementExtractor) {
       this.nextNode = startNode;
       this.forward = forward;
       this.elementExtractor = elementExtractor;

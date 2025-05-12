@@ -2,6 +2,7 @@ package com.tasktracker.task.validation;
 
 import java.util.List;
 import java.util.Objects;
+import java.util.UUID;
 
 public final class CommonValidationUtils {
   public static final int MIN_TITLE_LENGTH = 10;
@@ -33,9 +34,10 @@ public final class CommonValidationUtils {
     }
   }
 
-  public static void validateEpicId(int epicId, List<String> errors) {
-    if (epicId < 0) {
-      errors.add("Epic com.tasktracker.task ID should be positive.");
+  public static void validateUuid(UUID epicId, List<String> errors) {
+    Objects.requireNonNull(epicId, "Epic task id cannot be null");
+    if (epicId.toString().length() != 36) {
+      errors.add("Invalid epic task UUID format");
     }
   }
 }

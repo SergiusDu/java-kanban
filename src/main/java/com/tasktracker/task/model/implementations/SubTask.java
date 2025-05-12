@@ -2,7 +2,10 @@ package com.tasktracker.task.model.implementations;
 
 import com.tasktracker.task.exception.ValidationException;
 import com.tasktracker.task.model.enums.TaskStatus;
+import java.time.Duration;
 import java.time.LocalDateTime;
+import java.util.Objects;
+import java.util.UUID;
 
 /**
  * Represents a subtask that belongs to a specific epic com.tasktracker.task in a
@@ -10,32 +13,35 @@ import java.time.LocalDateTime;
  * association with an epic com.tasktracker.task.
  */
 public final class SubTask extends Task {
-  private final int epicTaskId;
+  private final UUID epicTaskId;
 
   /**
-   * Creates a new SubTask instance.
+   * Constructs a new SubTask with the specified parameters.
    *
-   * @param id the unique identifier of the subtask; must be greater than 0
-   * @param title the title of the subtask; cannot be null or shorter than the minimum length
-   * @param description the description of the subtask; cannot be null or shorter than the minimum
-   *     length
-   * @param status the current status of the subtask; cannot be null
-   * @param epicTaskId the ID of the epic task to which this subtask belongs; must be non-negative
-   * @param creationDateTime the creation date of the subtask; cannot be null
-   * @param updateDateTime the last update time of the subtask; cannot be null
-   * @throws ValidationException if any validation rules for parameters fail
+   * @param id The unique identifier for this subtask
+   * @param title The name/title of this subtask
+   * @param description A brief description of what this subtask entails
+   * @param status The current state of progress of this subtask (e.g. NEW, IN_PROGRESS, etc)
+   * @param epicTaskId The identifier of the parent Epic task this subtask belongs to
+   * @param creationDateTime The date and time when this subtask was initially created
+   * @param updateDateTime The date and time when this subtask was last modified
+   * @param startTime When this subtask is scheduled to begin
+   * @param duration How long this subtask is expected to take
+   * @throws ValidationException If any of the input parameters fail validation checks
    */
   public SubTask(
-      final int id,
+      final UUID id,
       final String title,
       final String description,
       final TaskStatus status,
-      final int epicTaskId,
+      final UUID epicTaskId,
       final LocalDateTime creationDateTime,
-      final LocalDateTime updateDateTime)
+      final LocalDateTime updateDateTime,
+      final LocalDateTime startTime,
+      final Duration duration)
       throws ValidationException {
-    super(id, title, description, status, creationDateTime, updateDateTime);
-    this.epicTaskId = getValidEpicTaskId(epicTaskId);
+    super(id, title, description, status, creationDateTime, updateDateTime, startTime, duration);
+    this.epicTaskId = Objects.requireNonNull(epicTaskId, "Epic task id can't be null.");
   }
 
   /**
@@ -43,21 +49,7 @@ public final class SubTask extends Task {
    *
    * @return the ID of the associated epic com.tasktracker.task
    */
-  public int getEpicTaskId() {
-    return epicTaskId;
-  }
-
-  /**
-   * Validates the provided epic com.tasktracker.task ID.
-   *
-   * @param epicTaskId the ID of the epic com.tasktracker.task to validate
-   * @return the validated epic com.tasktracker.task ID
-   * @throws ValidationException if the epic com.tasktracker.task ID is negative
-   */
-  private int getValidEpicTaskId(int epicTaskId) {
-    if (epicTaskId < 0) {
-      throw new ValidationException("Epic Task ID must be a non-negative integer.");
-    }
+  public UUID getEpicTaskId() {
     return epicTaskId;
   }
 
@@ -78,7 +70,7 @@ public final class SubTask extends Task {
         + ", status="
         + super.getStatus()
         + ", epicTaskId="
-        + epicTaskId
+        + epicTaskId.toString()
         + ", creationDate="
         + super.getCreationDate()
         + ", updateDate="

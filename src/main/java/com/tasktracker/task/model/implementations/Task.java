@@ -3,9 +3,11 @@ package com.tasktracker.task.model.implementations;
 import com.tasktracker.task.exception.ValidationException;
 import com.tasktracker.task.model.enums.TaskStatus;
 import com.tasktracker.task.validation.CommonValidationUtils;
+import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.Comparator;
 import java.util.Objects;
+import java.util.UUID;
 
 /**
  * Represents a com.tasktracker.task model that forms the base class for different types of tasks.
@@ -17,40 +19,62 @@ public abstract sealed class Task implements Comparable<Task>
     permits EpicTask, RegularTask, SubTask {
   public static final Comparator<Task> UPDATE_DATE_COMPARATOR =
       Comparator.comparing(Task::getUpdateDate);
-  private final int id;
+  private final UUID id;
   private final String title;
   private final String description;
   private final TaskStatus status;
   private final LocalDateTime creationDate;
   private final LocalDateTime updateTime;
+  private final LocalDateTime startTime;
+  private final Duration duration;
 
   /**
-   * Constructs a Task instance with specified ID, title, description, status, creation date, and
-   * update time. All input parameters are validated to ensure they meet the required criteria.
+   * Constructs a new Task with the given parameters.
    *
-   * @param id the unique identifier for the task; must be greater than 0
-   * @param title the title of the task; cannot be null or shorter than the minimum length
-   * @param description the description of the task; cannot be null or shorter than the minimum
-   *     length
-   * @param status the current status of the task; cannot be null
-   * @param creationDate the creation date of the task; cannot be null
-   * @param updateDate the last update time of the task; cannot be null
-   * @throws ValidationException if any of the value validation checks fail
+   * <p>Each field is validated according to the following rules:
+   *
+   * <ul>
+   *   <li>ID must be a valid UUID
+   *   <li>Title must meet minimum length requirements
+   *   <li>Description must meet minimum length requirements
+   *   <li>Status must not be null
+   *   <li>Creation date must not be null
+   *   <li>Update date must not be null and must be after creation date
+   *   <li>Start time must not be null
+   *   <li>Duration must not be null
+   * </ul>
+   *
+   * <p>The start time and duration together define the scheduled timeframe for the task.
+   *
+   * @param id unique UUID identifier for the task
+   * @param title name of the task
+   * @param description details about the task
+   * @param status current state from TaskStatus enum
+   * @param creationDate date and time when task was created
+   * @param updateDate date and time when task was last modified
+   * @param startTime scheduled start date and time
+   * @param duration planned duration of the task
+   * @throws ValidationException if any validation rule is violated
+   * @throws NullPointerException if any required parameter is null
    */
   protected Task(
-      final int id,
+      final UUID id,
       final String title,
       final String description,
       final TaskStatus status,
       final LocalDateTime creationDate,
-      final LocalDateTime updateDate)
+      final LocalDateTime updateDate,
+      LocalDateTime startTime,
+      Duration duration)
       throws ValidationException {
-    this.id = getValidatedId(id);
+    this.id = Objects.requireNonNull(id, "Id can't be null.");
     this.title = getValidatedTitle(title);
     this.description = getValidatedDescription(description);
     this.status = getValidatedStatus(status);
     this.creationDate = getValidatedCreationDate(creationDate);
     this.updateTime = getValidatedUpdatedTDate(updateDate);
+    this.startTime = startTime;
+    this.duration = duration;
   }
 
   /**
@@ -62,20 +86,6 @@ public abstract sealed class Task implements Comparable<Task>
   private static LocalDateTime getValidatedCreationDate(final LocalDateTime creationDate) {
     Objects.requireNonNull(creationDate, "Date can be null." + creationDate);
     return creationDate;
-  }
-
-  /**
-   * Validates the com.tasktracker.task ID to ensure it is greater than 0.
-   *
-   * @param id the com.tasktracker.task ID to validate
-   * @return the validated com.tasktracker.task ID
-   * @throws ValidationException if the com.tasktracker.task ID is less than or equal to 0
-   */
-  private static int getValidatedId(final int id) {
-    if (id < 0) {
-      throw new ValidationException("The Task ID must be greater than 0. Provided ID: " + id);
-    }
-    return id;
   }
 
   /**
@@ -133,6 +143,28 @@ public abstract sealed class Task implements Comparable<Task>
   }
 
   /**
+   * Calculates the end time of the task by adding the duration to the start time if both are
+   * specified.
+   *
+   * @return the end time of the task as a LocalDateTime if both start time and duration are set,
+   *     otherwise null if either start time or duration is missing
+   */
+  public LocalDateTime getEndTime() {
+    if (startTime == null || duration == null) return null;
+    return startTime.plus(duration);
+  }
+
+  /**
+   * Returns the duration of the task.
+   *
+   * @return the duration of the task as a {@link Duration} object, may be null if duration was not
+   *     set
+   */
+  public Duration getDuration() {
+    return duration;
+  }
+
+  /**
    * Validates the provided update date to ensure it is not null and not earlier than the creation
    * date.
    *
@@ -172,7 +204,7 @@ public abstract sealed class Task implements Comparable<Task>
    *
    * @return the com.tasktracker.task ID
    */
-  public int getId() {
+  public UUID getId() {
     return id;
   }
 
@@ -214,7 +246,7 @@ public abstract sealed class Task implements Comparable<Task>
   public boolean equals(final Object object) {
     if (object == null || getClass() != object.getClass()) return false;
     Task task = (Task) object;
-    return getId() == task.getId();
+    return getId().equals(task.getId());
   }
 
   /**
@@ -225,6 +257,15 @@ public abstract sealed class Task implements Comparable<Task>
   @Override
   public int hashCode() {
     return Objects.hashCode(getId());
+  }
+
+  /**
+   * Returns the scheduled start time of the task.
+   *
+   * @return the start time as a {@link LocalDateTime} object, may be null if start time was not set
+   */
+  public LocalDateTime getStartTime() {
+    return startTime;
   }
 
   /**

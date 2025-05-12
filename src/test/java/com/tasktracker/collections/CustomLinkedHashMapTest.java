@@ -30,7 +30,6 @@ class CustomLinkedHashMapTest {
     map.put(K1, V1);
     map.put(K2, V2);
     map.put(K3, V3);
-    // mapStringKeys = new CustomLinkedHashMap<>(); // Не используется
     mapSingleElement = new CustomLinkedHashMap<>();
     mapSingleElement.put(K1, V1);
   }
@@ -234,9 +233,9 @@ class CustomLinkedHashMapTest {
           V2, map.put(K2, V_REPLACE), "Putting an existing key should return the old value");
       assertEquals(3, map.size(), "Size should remain the same");
       assertEquals(V_REPLACE, map.get(K2), "Value should be updated");
-      // Verify order didn't change for the updated element
+
       List<Integer> keys = new ArrayList<>(map.keySet());
-      assertEquals(List.of(K1, K2, K3), keys, "Order should be preserved on update");
+      assertEquals(List.of(K1, K3, K2), keys, "Order should reflect K2 moved to end after update");
     }
 
     @Test
@@ -460,7 +459,7 @@ class CustomLinkedHashMapTest {
       assertEquals(V3, map.get(K3));
       assertEquals(V4, map.get(K4), "New element K4 should be added");
       // putAll calls putLast, K1 is updated in place, K4 added last.
-      assertIterationOrder(map, List.of(K1, K2, K3, K4), List.of(V_REPLACE, V2, V3, V4));
+      assertIterationOrder(map, List.of(K2, K3, K4, K1), List.of(V2, V3, V4, V_REPLACE));
     }
 
     @Test
@@ -1253,7 +1252,7 @@ class CustomLinkedHashMapTest {
       assertEquals(4, map.size());
       assertEquals(V_REPLACE, map.get(K2));
       // Order should not change for updated element
-      assertIterationOrder(map, List.of(K4, K1, K2, K3), List.of(V4, V1, V_REPLACE, V3));
+      assertIterationOrder(map, List.of(K2, K4, K1, K3), List.of(V_REPLACE, V4, V1, V3));
     }
 
     @Test
@@ -1268,7 +1267,7 @@ class CustomLinkedHashMapTest {
       assertEquals(4, map.size());
       assertEquals(V_REPLACE, map.get(K1));
       assertEquals(V4, map.get(K4));
-      assertIterationOrder(map, List.of(K4, K1, K2, K3), List.of(V4, V_REPLACE, V2, V3));
+      assertIterationOrder(map, List.of(K1, K4, K2, K3), List.of(V_REPLACE, V4, V2, V3));
     }
 
     @Test

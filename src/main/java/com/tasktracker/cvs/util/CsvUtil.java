@@ -1,10 +1,7 @@
 package com.tasktracker.cvs.util;
 
 import com.tasktracker.cvs.exceptions.CsvParseException;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 import java.util.stream.Collectors;
 
 public class CsvUtil {
@@ -56,22 +53,23 @@ public class CsvUtil {
   }
 
   /**
-   * Transforms a semicolon-delimited list of numeric IDs into an immutable {@code Set<Integer>}.
+   * Transforms a semicolon-delimited list of UUIDs into an immutable {@code Set<UUID>}.
    *
    * <p>Rules:
    *
    * <ul>
    *   <li>Empty or {@code null} input yields {@code Set.of()}.
-   *   <li>Whitespace around numbers is ignored.
+   *   <li>Whitespace around UUIDs is ignored.
    *   <li>Duplicate values are removed.
-   *   <li>Any non-numeric token triggers {@link CsvParseException}.
+   *   <li>Any invalid UUID token triggers {@link CsvParseException}.
    * </ul>
    *
-   * @param raw semicolon-separated string, e.g. {@code "1; 2;42"}
-   * @return immutable set containing the parsed IDs
-   * @throws CsvParseException if any token cannot be parsed as an integer
+   * @param raw semicolon-separated string of UUIDs, e.g. {@code
+   *     "123e4567-e89b-12d3-a456-426614174000; 87e8a55d-31c8-4f5b-9e45-a6a234d12345"}
+   * @return immutable set containing the parsed UUIDs
+   * @throws CsvParseException if any token cannot be parsed as a valid UUID
    */
-  public static Set<Integer> parseIds(String raw) {
+  public static Set<UUID> parseIds(String raw) {
     if (raw == null || raw.isBlank()) {
       return Set.of();
     }
@@ -79,10 +77,14 @@ public class CsvUtil {
       return Arrays.stream(raw.split(";"))
           .map(String::trim)
           .filter(s -> !s.isEmpty())
-          .map(Integer::parseInt)
+          .map(UUID::fromString)
           .collect(Collectors.toUnmodifiableSet());
     } catch (NumberFormatException e) {
-      throw new CsvParseException("Failed to parse integer value", e);
+      throw new CsvParseException("Failed to parse UUID value", e);
     }
+  }
+
+  public static String joinUuidSet(Set<UUID> uuids) {
+    return uuids.stream().map(UUID::toString).collect(Collectors.joining(";"));
   }
 }

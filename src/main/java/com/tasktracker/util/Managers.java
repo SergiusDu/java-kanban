@@ -27,8 +27,8 @@ public class Managers {
    */
   public static TaskManager getDefault() {
     TaskRepository taskRepository = new FileBakedTaskRepository(DATA_FILE_PATH);
-    HistoryRepository historyRepository = new InMemoryHistoryRepository();
-    HistoryManager historyManager = new InMemoryHistoryManager(historyRepository);
+    HistoryStore historyStore = new InMemoryHistoryStore();
+    HistoryManager historyManager = new InMemoryHistoryManager(historyStore);
     return new TaskManagerImpl(taskRepository, historyManager);
   }
 }

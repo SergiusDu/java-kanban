@@ -6,9 +6,11 @@ import com.tasktracker.task.model.implementations.EpicTask;
 import com.tasktracker.task.model.implementations.RegularTask;
 import com.tasktracker.task.model.implementations.SubTask;
 import com.tasktracker.task.model.implementations.Task;
-import com.tasktracker.task.store.TaskRepository;
+import com.tasktracker.task.store.exception.TaskNotFoundException;
 import java.util.Collection;
+import java.util.List;
 import java.util.Optional;
+import java.util.UUID;
 
 public interface TaskManager {
   /**
@@ -21,17 +23,9 @@ public interface TaskManager {
   /** Clears all tasks from the repository. */
   void clearAllTasks();
 
-  /**
-   * Removes tasks from the repository that match the specified com.tasktracker.task type. If the
-   * com.tasktracker.task type is {@link EpicTask}, all its associated Sub-Tasks will also be
-   * removed.
-   *
-   * @param clazz the class type of the tasks to remove
-   * @param <T> the generic type extending {@link Task} representing the com.tasktracker.task type
-   * @return {@code true} if at least one com.tasktracker.task was removed, {@code false} otherwise
-   * @throws UnsupportedOperationException if the provided com.tasktracker.task type is unsupported
-   */
-  <T extends Task> boolean removeTasksByType(Class<T> clazz) throws UnsupportedOperationException;
+  List<Task> getPrioritizedTasks();
+
+  <T extends Task> void removeTasksByType(Class<T> clazz) throws UnsupportedOperationException;
 
   /**
    * Removes a com.tasktracker.task from the repository by its ID. If the com.tasktracker.task is a
@@ -45,7 +39,8 @@ public interface TaskManager {
    * @throws UnsupportedOperationException if the com.tasktracker.task type is unknown or
    *     unsupported
    */
-  Optional<Task> removeTaskById(int id) throws UnsupportedOperationException;
+  Optional<Task> removeTaskById(UUID id)
+      throws UnsupportedOperationException, ValidationException, TaskNotFoundException;
 
   /**
    * Retrieves a com.tasktracker.task from the repository by its ID.
@@ -54,86 +49,27 @@ public interface TaskManager {
    * @return an {@link Optional} containing the com.tasktracker.task if it exists, or an empty
    *     Optional if not
    */
-  Optional<Task> getTask(int id);
+  Optional<Task> getTask(UUID id);
 
-  /**
-   * Creates and adds a new Regular Task to the repository.
-   *
-   * @param regularTaskCreationDTO the DTO containing data for the Regular Task
-   * @return the created Regular Task
-   * @throws ValidationException if the DTO data is invalid
-   */
-  RegularTask addTask(RegularTaskCreationDTO regularTaskCreationDTO) throws ValidationException;
+  void addTask(RegularTaskCreationDTO regularTaskCreationDTO) throws ValidationException;
 
-  /**
-   * Creates and adds a new Epic Task to the repository.
-   *
-   * @param epicTaskCreationDTO the DTO containing data for the Epic Task
-   * @return the created Epic Task
-   * @throws ValidationException if the DTO data is invalid
-   */
-  EpicTask addTask(EpicTaskCreationDTO epicTaskCreationDTO) throws ValidationException;
+  void addTask(EpicTaskCreationDTO epicTaskCreationDTO) throws ValidationException;
 
-  /**
-   * Creates and adds a new Sub-Task to the repository, and associates it with its parent Epic Task.
-   *
-   * @param subTaskCreationDTO the DTO containing data for the Sub-Task
-   * @return the created Sub-Task
-   * @throws ValidationException if the DTO data or associated Epic Task is invalid
-   */
-  SubTask addTask(SubTaskCreationDTO subTaskCreationDTO) throws ValidationException;
+  void addTask(SubTaskCreationDTO subTaskCreationDTO)
+      throws ValidationException, TaskNotFoundException;
 
-  /**
-   * Updates an existing Regular Task in the repository.
-   *
-   * @param regularTaskUpdateDTO the DTO containing updated data for the Regular Task
-   * @return the updated Regular Task
-   * @throws ValidationException if the com.tasktracker.task data is invalid
-   */
-  RegularTask updateTask(RegularTaskUpdateDTO regularTaskUpdateDTO) throws ValidationException;
+  RegularTask updateTask(RegularTaskUpdateDTO regularTaskUpdateDTO)
+      throws ValidationException, TaskNotFoundException;
 
-  /**
-   * Updates an existing Sub-Task in the repository and modifies the association with its parent
-   * Epic Task if necessary.
-   *
-   * @param subTaskUpdateDTO the DTO containing updated data for the Sub-Task
-   * @return the updated Sub-Task
-   * @throws ValidationException if the com.tasktracker.task data or associated Epic Task is invalid
-   */
-  SubTask updateTask(SubTaskUpdateDTO subTaskUpdateDTO) throws ValidationException;
+  SubTask updateTask(SubTaskUpdateDTO subTaskUpdateDTO)
+      throws ValidationException, TaskNotFoundException;
 
-  /**
-   * Updates an existing Epic Task in the repository, preserving its Sub-Task associations and
-   * status.
-   *
-   * @param epicTaskUpdateDTO the DTO containing updated data for the Epic Task
-   * @return the updated Epic Task
-   * @throws ValidationException if the com.tasktracker.task data is invalid
-   */
-  EpicTask updateTask(EpicTaskUpdateDTO epicTaskUpdateDTO) throws ValidationException;
+  EpicTask updateTask(EpicTaskUpdateDTO epicTaskUpdateDTO)
+      throws ValidationException, TaskNotFoundException;
 
-  /**
-   * Retrieves all Sub-Tasks associated with the given Epic Task.
-   *
-   * @param epicId the ID of the Epic Task
-   * @return a collection of associated Sub-Tasks
-   * @throws ValidationException if the Epic Task does not exist or is invalid
-   */
-  Collection<SubTask> getEpicSubtasks(int epicId) throws ValidationException;
+  Collection<SubTask> getEpicSubtasks(UUID epicId) throws ValidationException;
 
-  /**
-   * Retrieves all tasks of the specified class type stored in the repository.
-   *
-   * @param targetClass the class type of tasks to retrieve
-   * @return a collection of tasks matching the specified class type
-   */
   <T extends Task> Collection<T> getAllTasksByClass(Class<T> targetClass);
 
-  /**
-   * Retrieves the complete history of tasks as a collection of {@link Task} objects. Only tasks
-   * that are still present in the {@link TaskRepository} are included in the result.
-   *
-   * @return a collection of {@link Task} objects present in the history and the repository
-   */
   Collection<Task> getHistory();
 }

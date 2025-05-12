@@ -1,3 +1,6 @@
 package com.tasktracker.task.dto;
 
-public record EpicTaskCreationDTO(String title, String description) implements TaskCreationDTO {}
+import java.time.LocalDateTime;
+
+public record EpicTaskCreationDTO(String title, String description, LocalDateTime startTime)
+    implements TaskCreationDTO {}

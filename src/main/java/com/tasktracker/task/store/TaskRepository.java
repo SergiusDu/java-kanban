@@ -1,90 +1,79 @@
 package com.tasktracker.task.store;
 
 import com.tasktracker.task.model.implementations.Task;
+import com.tasktracker.task.store.exception.TaskNotFoundException;
 import java.util.Collection;
 import java.util.Optional;
+import java.util.UUID;
 import java.util.function.Predicate;
 
 /**
  * Interface for managing {@link Task} objects, providing operations for adding, updating,
- * retrieving, and removing tasks. Tasks are identified by unique integer IDs and stored in an
- * underlying storage mechanism.
+ * retrieving, and removing tasks. Tasks are identified by unique UUIDs and stored in an underlying
+ * storage mechanism.
  */
 public interface TaskRepository {
 
   /**
-   * Adds a new task of type {@link Task} or its subclasses to the repository.
+   * Adds a new task to the repository. The task must have a unique ID that isn't already present in
+   * the repository.
    *
-   * @param <T> the type of {@link Task} being added
-   * @param task the task to be added to the repository
-   * @return the added task with an auto-generated unique ID
+   * @param task the task to add to the repository
+   * @throws NullPointerException if the task is null
+   * @throws IllegalArgumentException if a task with the same ID already exists in the repository
    */
-  <T extends Task> T addTask(T task);
+  void addTask(final Task task);
 
   /**
-   * Updates an existing {@link Task} in the repository with new details. The {@link Task} to update
-   * must have a valid ID that already exists in the repository.
+   * Updates an existing task in the repository with the provided updated task data.
    *
-   * @param updatedTask the {@link Task} containing the updated details, including a valid ID
-   * @return an {@link Optional} containing the previous {@link Task} details, or an empty {@link
-   *     Optional} if no task with the given ID exists
+   * @param updatedTask the task containing the updated data, must have an existing ID in the
+   *     repository
+   * @return the previous version of the task that was updated
+   * @throws TaskNotFoundException if no task exists with the ID of the updated task
+   * @throws NullPointerException if the updated task is null
    */
-  Task updateTask(Task updatedTask);
+  Task updateTask(Task updatedTask) throws TaskNotFoundException;
 
   /**
    * Retrieves all tasks stored in the repository.
    *
-   * @return an unmodifiable {@link Collection} containing all tasks
+   * @return an unmodifiable Collection containing all tasks
    */
   Collection<Task> getAllTasks();
 
   /**
-   * Retrieves a com.tasktracker.task by its unique identifier.
+   * Retrieves a task by its UUID.
    *
-   * @param id the unique identifier of the com.tasktracker.task in the repository
-   * @return an {@link Optional} containing the com.tasktracker.task if it exists, or an empty
-   *     {@link Optional} if it does not
+   * @param id the UUID of the task
+   * @return an Optional containing the task if found, or empty if not found
    */
-  Optional<Task> getTaskById(int id);
+  Optional<Task> getTaskById(UUID id);
 
   /**
-   * Removes a com.tasktracker.task from the repository by its unique identifier.
+   * Removes a task from the repository.
    *
-   * @param id the unique identifier of the com.tasktracker.task to remove from the repository
-   * @return an {@link Optional} containing the removed com.tasktracker.task, or an empty {@link
-   *     Optional} if no com.tasktracker.task was found for the given ID
+   * @param id the UUID of the task to remove
+   * @return an Optional containing the removed task, or empty if not found
    */
-  Optional<Task> removeTask(int id);
+  Optional<Task> removeTask(UUID id);
 
   /**
-   * Finds tasks that match the given {@link Predicate} criteria.
+   * Finds tasks that match the given predicate.
    *
-   * @param taskPredicate the {@link Predicate} to apply to each com.tasktracker.task for filtering
-   * @return a {@link Collection} of tasks that satisfy the given {@link Predicate}; an empty list
-   *     if no such tasks exist
+   * @param taskPredicate the predicate to filter tasks
+   * @return a Collection of matching tasks, or empty collection if none found
    */
   Collection<Task> findTasksMatching(Predicate<Task> taskPredicate);
 
   /**
-   * Removes tasks from the repository that satisfy the given {@link Predicate} condition.
+   * Removes tasks matching the given predicate.
    *
-   * @param taskPredicate the {@link Predicate} used to identify tasks to remove
-   * @return {@code true} if any tasks were removed, {@code false} otherwise
+   * @param taskPredicate the predicate to identify tasks to remove
+   * @return true if any tasks were removed, false otherwise
    */
   boolean removeMatchingTasks(Predicate<Task> taskPredicate);
 
-  /**
-   * Clears all tasks from the repository, permanently deleting all stored data. After this
-   * operation is performed, the repository will be empty. This action is irreversible.
-   */
+  /** Removes all tasks from the repository. */
   void clearAllTasks();
-
-  /**
-   * Generates a unique integer ID for new {@link Task} objects in the repository. The ID is
-   * generated as one greater than the highest current ID in the repository. If no tasks exist, the
-   * ID generation starts with 0.
-   *
-   * @return a unique integer ID for a new {@link Task}
-   */
-  int generateId();
 }
