@@ -37,6 +37,9 @@ public final class TreeSetScheduleIndex implements ScheduleIndex {
   }
 
   private boolean hasConflict(Task taskToCheck, Task existingTask) {
+    if (taskToCheck instanceof EpicTask) {
+      return false;
+    }
     if (taskToCheck == null || existingTask == null) {
       return false;
     }
