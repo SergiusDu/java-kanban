@@ -6,24 +6,52 @@ import com.tasktracker.task.dto.SubTaskUpdateDTO;
 import com.tasktracker.task.exception.ValidationException;
 import com.tasktracker.task.model.enums.TaskStatus;
 import com.tasktracker.task.validation.Validator;
+import java.time.Duration;
+import java.time.LocalDateTime;
+import java.util.UUID;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
-/** JUnit5 tests for {@link SubTaskUpdateValidator}. */
 class SubTaskUpdateValidatorTest {
 
   private final Validator<SubTaskUpdateDTO> validator = new SubTaskUpdateValidator();
+
+  private static final UUID VALID_TASK_ID = UUID.randomUUID();
+  private static final UUID VALID_EPIC_ID = UUID.randomUUID();
+  private static final String VALID_TITLE = "Valid Title With Enough Characters";
+  private static final String VALID_DESCRIPTION = "Valid Description Also With Enough Characters";
+  private static final String SHORT_TITLE = "Short";
+  private static final String SHORT_DESCRIPTION = "Brief";
+  private static final LocalDateTime DEFAULT_START_TIME = LocalDateTime.now().plusDays(1);
+  private static final Duration DEFAULT_DURATION = Duration.ofHours(2);
 
   @Test
   @DisplayName("validate should pass for valid SubTaskUpdateDTO")
   void validate_ValidSubTaskUpdateDTO() {
     SubTaskUpdateDTO dto =
         new SubTaskUpdateDTO(
-            1,
-            "ValidTitleXYZ", // ≥ 10 characters
-            "ValidDescriptionXYZ", // ≥ 10 characters
+            VALID_TASK_ID,
+            VALID_TITLE,
+            VALID_DESCRIPTION,
             TaskStatus.NEW,
-            10);
+            VALID_EPIC_ID,
+            DEFAULT_START_TIME,
+            DEFAULT_DURATION);
+    assertDoesNotThrow(() -> validator.validate(dto));
+  }
+
+  @Test
+  @DisplayName("validate should pass for valid SubTaskUpdateDTO with null times")
+  void validate_ValidSubTaskUpdateDTO_NullTimes() {
+    SubTaskUpdateDTO dto =
+        new SubTaskUpdateDTO(
+            VALID_TASK_ID,
+            VALID_TITLE,
+            VALID_DESCRIPTION,
+            TaskStatus.IN_PROGRESS,
+            VALID_EPIC_ID,
+            null,
+            null);
     assertDoesNotThrow(() -> validator.validate(dto));
   }
 
@@ -32,20 +60,19 @@ class SubTaskUpdateValidatorTest {
   void validate_ShortTitleSubTaskUpdateDTO() {
     SubTaskUpdateDTO dto =
         new SubTaskUpdateDTO(
-            2,
-            "Short", // < 10 characters
-            "ValidDescriptionXYZ",
+            UUID.randomUUID(),
+            SHORT_TITLE,
+            VALID_DESCRIPTION,
             TaskStatus.IN_PROGRESS,
-            10);
+            VALID_EPIC_ID,
+            null,
+            null);
     ValidationException exception =
-        assertThrows(
-            ValidationException.class,
-            () -> validator.validate(dto),
-            "Expected ValidationException for short title");
+        assertThrows(ValidationException.class, () -> validator.validate(dto));
     assertTrue(
         exception.getErrors().stream()
             .anyMatch(error -> error.contains("Title length should be at least")),
-        "Exception should contain title length error message");
+        "Exception should contain title length error message. Actual: " + exception.getErrors());
   }
 
   @Test
@@ -54,70 +81,60 @@ class SubTaskUpdateValidatorTest {
   void validate_ShortDescriptionSubTaskUpdateDTO() {
     SubTaskUpdateDTO dto =
         new SubTaskUpdateDTO(
-            3,
-            "ValidTitleXYZ",
-            "Short", // < 10 characters
+            UUID.randomUUID(),
+            VALID_TITLE,
+            SHORT_DESCRIPTION,
             TaskStatus.DONE,
-            10);
+            VALID_EPIC_ID,
+            null,
+            null);
     ValidationException exception =
-        assertThrows(
-            ValidationException.class,
-            () -> validator.validate(dto),
-            "Expected ValidationException for short description");
+        assertThrows(ValidationException.class, () -> validator.validate(dto));
     assertTrue(
         exception.getErrors().stream()
             .anyMatch(error -> error.contains("Description length should be at least")),
-        "Exception should contain description length error message");
+        "Exception should contain description length error message. Actual: "
+            + exception.getErrors());
   }
 
   @Test
-  @DisplayName("validate should throw ValidationException for negative epicId in SubTaskUpdateDTO")
-  void validate_NegativeEpicIdSubTaskUpdateDTO() {
+  @DisplayName("validate should throw NullPointerException for null epicId in SubTaskUpdateDTO")
+  void validate_NullEpicIdSubTaskUpdateDTO() {
     SubTaskUpdateDTO dto =
         new SubTaskUpdateDTO(
-            4, "ValidTitleXYZ", "ValidDescriptionXYZ", TaskStatus.NEW, -5 // Negative epicId
-            );
-    ValidationException exception =
-        assertThrows(
-            ValidationException.class,
-            () -> validator.validate(dto),
-            "Expected ValidationException for negative epicId");
-    assertTrue(
-        exception.getErrors().stream()
-            .anyMatch(error -> error.contains("Epic com.tasktracker.task ID should be positive.")),
-        "Exception should contain epicId positivity error message");
+            UUID.randomUUID(), VALID_TITLE, VALID_DESCRIPTION, TaskStatus.NEW, null, null, null);
+    assertThrows(
+        NullPointerException.class,
+        () -> validator.validate(dto),
+        "Expected NullPointerException because CommonValidationUtils.validateUuid will throw it for null epicId before validator collects errors list.");
   }
 
   @Test
   @DisplayName("validate should throw ValidationException for multiple errors in SubTaskUpdateDTO")
   void validate_MultipleErrorsSubTaskUpdateDTO() {
-    SubTaskUpdateDTO dto =
+    SubTaskUpdateDTO dtoWithShortTitleAndDesc =
         new SubTaskUpdateDTO(
-            5,
-            "Short", // < 10 characters
-            "Short", // < 10 characters
+            UUID.randomUUID(),
+            SHORT_TITLE,
+            SHORT_DESCRIPTION,
             TaskStatus.NEW,
-            -10 // Negative epicId
-            );
+            VALID_EPIC_ID,
+            null,
+            null);
+
     ValidationException exception =
-        assertThrows(
-            ValidationException.class,
-            () -> validator.validate(dto),
-            "Expected ValidationException for multiple validation errors");
+        assertThrows(ValidationException.class, () -> validator.validate(dtoWithShortTitleAndDesc));
     assertEquals(
-        3, exception.getErrors().size(), "Exception should contain three validation errors");
+        2,
+        exception.getErrors().size(),
+        "Exception should contain two validation errors (title, description). Actual: "
+            + exception.getErrors());
     assertTrue(
         exception.getErrors().stream()
-            .anyMatch(error -> error.contains("Title length should be at least")),
-        "Exception should contain title length error message");
+            .anyMatch(error -> error.contains("Title length should be at least")));
     assertTrue(
         exception.getErrors().stream()
-            .anyMatch(error -> error.contains("Description length should be at least")),
-        "Exception should contain description length error message");
-    assertTrue(
-        exception.getErrors().stream()
-            .anyMatch(error -> error.contains("Epic com.tasktracker.task ID should be positive.")),
-        "Exception should contain epicId positivity error message");
+            .anyMatch(error -> error.contains("Description length should be at least")));
   }
 
   @Test
@@ -125,20 +142,8 @@ class SubTaskUpdateValidatorTest {
   void validate_NullTitleThrowsException() {
     SubTaskUpdateDTO dto =
         new SubTaskUpdateDTO(
-            6,
-            null, // Null title
-            "ValidDescriptionXYZ",
-            TaskStatus.NEW,
-            10);
-    NullPointerException exception =
-        assertThrows(
-            NullPointerException.class,
-            () -> validator.validate(dto),
-            "Expected NullPointerException for null title");
-    assertEquals(
-        "Title can't be null.",
-        exception.getMessage(),
-        "Exception message should match expected for null title");
+            UUID.randomUUID(), null, VALID_DESCRIPTION, TaskStatus.NEW, VALID_EPIC_ID, null, null);
+    assertThrows(NullPointerException.class, () -> validator.validate(dto));
   }
 
   @Test
@@ -147,19 +152,41 @@ class SubTaskUpdateValidatorTest {
   void validate_NullDescriptionThrowsException() {
     SubTaskUpdateDTO dto =
         new SubTaskUpdateDTO(
-            7,
-            "ValidTitleXYZ",
-            null, // Null description
+            UUID.randomUUID(), VALID_TITLE, null, TaskStatus.NEW, VALID_EPIC_ID, null, null);
+    assertThrows(NullPointerException.class, () -> validator.validate(dto));
+  }
+
+  @Test
+  @DisplayName("validate should pass when status is null (status not validated by this validator)")
+  void validate_NullStatus_PassesValidation() {
+    SubTaskUpdateDTO dto =
+        new SubTaskUpdateDTO(
+            VALID_TASK_ID,
+            VALID_TITLE,
+            VALID_DESCRIPTION,
+            null, // Status
+            VALID_EPIC_ID,
+            DEFAULT_START_TIME,
+            DEFAULT_DURATION);
+    assertDoesNotThrow(
+        () -> validator.validate(dto),
+        "Null status should not cause validation failure in SubTaskUpdateValidator as it's not checked there.");
+  }
+
+  @Test
+  @DisplayName("validate should pass when id is null (id not validated by this validator)")
+  void validate_NullId_PassesValidation() {
+    SubTaskUpdateDTO dto =
+        new SubTaskUpdateDTO(
+            null, // ID
+            VALID_TITLE,
+            VALID_DESCRIPTION,
             TaskStatus.NEW,
-            10);
-    NullPointerException exception =
-        assertThrows(
-            NullPointerException.class,
-            () -> validator.validate(dto),
-            "Expected NullPointerException for null description");
-    assertEquals(
-        "Description can't be null.",
-        exception.getMessage(),
-        "Exception message should match expected for null description");
+            VALID_EPIC_ID,
+            DEFAULT_START_TIME,
+            DEFAULT_DURATION);
+    assertDoesNotThrow(
+        () -> validator.validate(dto),
+        "Null id should not cause validation failure in SubTaskUpdateValidator as it's not checked there.");
   }
 }

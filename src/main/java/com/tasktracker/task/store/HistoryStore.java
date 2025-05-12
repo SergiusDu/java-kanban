@@ -3,12 +3,13 @@ package com.tasktracker.task.store;
 import com.tasktracker.task.model.implementations.TaskView;
 import java.util.Collection;
 import java.util.Optional;
+import java.util.UUID;
 
 /**
  * Repository interface for managing and retrieving tasks' history. Provides methods for adding,
  * retrieving, and removing tasks from history.
  */
-public interface HistoryRepository {
+public interface HistoryStore {
   /**
    * Adds a new task view to the history repository, replacing any existing task view with the same
    * ID.
@@ -27,5 +28,5 @@ public interface HistoryRepository {
    */
   Collection<TaskView> getAll();
 
-  Optional<TaskView> remove(int id);
+  Optional<TaskView> remove(UUID id);
 }

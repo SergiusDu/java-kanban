@@ -8,10 +8,10 @@ import java.util.*;
  * A repository implementation for managing task history in memory using a TreeSet. The tasks are
  * stored in a navigable, ordered collection to maintain a defined order.
  */
-public class InMemoryHistoryRepository implements HistoryRepository {
+public class InMemoryHistoryStore implements HistoryStore {
   private static final int INITIAL_CAPACITY = 16;
   private static final float LOAD_FACTOR = 0.75f;
-  private final CustomLinkedHashMap<Integer, TaskView> store = new CustomLinkedHashMap<>();
+  private final CustomLinkedHashMap<UUID, TaskView> store = new CustomLinkedHashMap<>();
 
   /**
    * Adds a new task view to the history repository, replacing any existing task view with the same
@@ -45,7 +45,7 @@ public class InMemoryHistoryRepository implements HistoryRepository {
    *     {@link Optional} if no task view with the given ID exists
    */
   @Override
-  public Optional<TaskView> remove(int id) {
+  public Optional<TaskView> remove(UUID id) {
     return Optional.ofNullable(store.remove(id));
   }
 }

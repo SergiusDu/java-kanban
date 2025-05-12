@@ -14,7 +14,7 @@ public class SubTaskUpdateValidator implements Validator<SubTaskUpdateDTO> {
     List<String> errors = new ArrayList<>();
     CommonValidationUtils.validateTitle(dto.title(), errors);
     CommonValidationUtils.validateDescription(dto.description(), errors);
-    CommonValidationUtils.validateEpicId(dto.epicId(), errors);
+    CommonValidationUtils.validateUuid(dto.epicId(), errors);
 
     if (!errors.isEmpty()) {
       throw new ValidationException(errors);

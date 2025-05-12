@@ -7,15 +7,14 @@ import com.tasktracker.task.model.implementations.EpicTask;
 import com.tasktracker.task.model.implementations.RegularTask;
 import com.tasktracker.task.model.implementations.SubTask;
 import com.tasktracker.task.model.implementations.Task;
+import java.time.Duration;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeParseException;
 import java.util.Set;
+import java.util.UUID;
 import java.util.stream.Collectors;
 
-/**
- * Utility class for mapping tasks to and from CSV format. Handles serialization and deserialization
- * of different task types.
- */
 public class TaskCsvMapper {
   public static final String DELIMITER = ",";
   public static final String ESCAPED_QUOTE = "\"\"";
@@ -27,6 +26,8 @@ public class TaskCsvMapper {
           + "\"status\","
           + "\"epicId\","
           + "\"subtasks\","
+          + "\"startTime\","
+          + "\"duration\","
           + "\"created\","
           + "\"updated\"";
   private static final DateTimeFormatter FMT = DateTimeFormatter.ISO_LOCAL_DATE_TIME;
@@ -36,119 +37,151 @@ public class TaskCsvMapper {
 
   private TaskCsvMapper() {}
 
-  /**
-   * Converts a CSV line into a Task object.
-   *
-   * @param line CSV line containing task data
-   * @return Task object (RegularTask, EpicTask, or SubTask) parsed from the CSV line
-   * @throws CvsMapperException if parsing fails or task type is unknown
-   */
-  public static Task fromCvs(String line) {
+  private static String joinIds(Set<UUID> ids) {
+    if (ids == null || ids.isEmpty()) {
+      return "";
+    }
+    return ids.stream().map(UUID::toString).collect(Collectors.joining(";"));
+  }
+
+  private static String quote(String s) {
+    if (s == null) {
+      return "\"\"";
+    }
+    return "\"" + s.replace("\"", ESCAPED_QUOTE) + "\"";
+  }
+
+  private static String unquote(String s) {
+    if (s == null)
+      return ""; // Если сама строка null (например, из-за ошибки split), вернуть пустую строку
+    if ("\"\"".equals(s))
+      return ""; // Если строка это "" (пустая строка в кавычках), вернуть пустую строку
+    if (s.length() >= 2 && s.startsWith("\"") && s.endsWith("\"")) {
+      return s.substring(1, s.length() - 1).replace(ESCAPED_QUOTE, "\"");
+    }
+    return s; // Возвращаем как есть, если не обрамлено кавычками (например, литерал "null")
+  }
+
+  public static Task fromCsv(String line) {
+    if (line == null || line.isBlank()) {
+      throw new CvsMapperException("CSV line is null or blank: [" + line + "]");
+    }
     String[] parts = CsvUtil.smartSplit(line, DELIMITER.charAt(0)).toArray(new String[0]);
+    final int EXPECTED_FIELDS = 11;
+    if (parts.length < EXPECTED_FIELDS) {
+      throw new CvsMapperException(
+          "Incorrect number of fields in CSV line. Expected "
+              + EXPECTED_FIELDS
+              + ", got "
+              + parts.length
+              + ". Line: "
+              + line);
+    }
+
     int idx = 0;
     try {
-      int id = Integer.parseInt(parts[idx++]);
+      UUID id = UUID.fromString(unquote(parts[idx++]));
       String type = unquote(parts[idx++]);
       String title = unquote(parts[idx++]);
       String description = unquote(parts[idx++]);
       TaskStatus status = TaskStatus.valueOf(unquote(parts[idx++]));
-      int tempIdx = idx++;
-      int epicId = parts[tempIdx].isEmpty() ? -1 : Integer.parseInt(parts[tempIdx]);
-      String subtasksRaw = parts[idx++];
-      LocalDateTime createdAt = LocalDateTime.parse(parts[idx++], FMT);
-      LocalDateTime updatedAt = LocalDateTime.parse(parts[idx], FMT);
+
+      String epicIdRaw = unquote(parts[idx++]);
+      UUID epicId =
+          (epicIdRaw.isEmpty() || "null".equalsIgnoreCase(epicIdRaw))
+              ? null
+              : UUID.fromString(epicIdRaw);
+
+      String subtasksRaw = unquote(parts[idx++]);
+      Set<UUID> subtaskIds = CsvUtil.parseIds(subtasksRaw);
+
+      String startTimeRaw = unquote(parts[idx++]);
+      LocalDateTime startTime =
+          (startTimeRaw.isEmpty() || "null".equalsIgnoreCase(startTimeRaw))
+              ? null
+              : LocalDateTime.parse(startTimeRaw);
+
+      String durationRaw = unquote(parts[idx++]);
+      Duration duration =
+          (durationRaw.isEmpty() || "null".equalsIgnoreCase(durationRaw))
+              ? null
+              : Duration.parse(durationRaw);
+
+      LocalDateTime createdAt = LocalDateTime.parse(unquote(parts[idx++]), FMT);
+      LocalDateTime updatedAt = LocalDateTime.parse(unquote(parts[idx++]), FMT);
+
       return switch (type) {
         case REGULAR_TASK_NAME ->
-            new RegularTask(id, title, description, status, createdAt, updatedAt);
+            new RegularTask(
+                id, title, description, status, createdAt, updatedAt, startTime, duration);
         case EPIC_TASK_NAME ->
             new EpicTask(
                 id,
                 title,
                 description,
                 status,
-                CsvUtil.parseIds(subtasksRaw),
+                subtaskIds,
                 createdAt,
-                updatedAt);
-        case SUBTASK_TASK_NAME ->
-            new SubTask(id, title, description, status, epicId, createdAt, updatedAt);
-        default -> throw new CvsMapperException("Unknown task type " + type);
+                updatedAt,
+                startTime,
+                duration);
+        case SUBTASK_TASK_NAME -> {
+          if (epicId == null)
+            throw new CvsMapperException("SubTask must have an epicId. Line: " + line);
+          yield new SubTask(
+              id, title, description, status, epicId, createdAt, updatedAt, startTime, duration);
+        }
+        default -> throw new CvsMapperException("Unknown task type " + type + ". Line: " + line);
       };
+    } catch (DateTimeParseException | IllegalArgumentException e) {
+      throw new CvsMapperException(
+          "Failed to parse CSV data at line: " + line + ". Error: " + e.getMessage(), e);
     } catch (Exception e) {
-      throw new CvsMapperException("Failed to parse CVS at line: " + line, e);
+      throw new CvsMapperException(
+          "Unexpected error parsing CSV line: " + line + ". Error: " + e.getMessage(), e);
     }
   }
 
-  /**
-   * Converts a Task object into a CSV line.
-   *
-   * @param task Task object to convert
-   * @return CSV formatted string representing the task
-   */
-  public static String toCvs(Task task) {
+  public static String toCsv(Task task) {
     StringBuilder sb = new StringBuilder();
-    sb.append(task.getId()).append(DELIMITER);
+    sb.append(quote(task.getId().toString())).append(DELIMITER);
     sb.append(quote(taskType(task))).append(DELIMITER);
     sb.append(quote(task.getTitle())).append(DELIMITER);
     sb.append(quote(task.getDescription())).append(DELIMITER);
     sb.append(quote(task.getStatus().toString())).append(DELIMITER);
+
     if (task instanceof SubTask subTask) {
-      sb.append(subTask.getEpicTaskId());
-    }
-    sb.append(DELIMITER);
-    if (task instanceof EpicTask epicTask) {
-      sb.append(join(epicTask.getSubtaskIds()));
+      sb.append(quote(subTask.getEpicTaskId().toString()));
+    } else {
+      sb.append(quote(""));
     }
     sb.append(DELIMITER);
 
-    sb.append(task.getCreationDate().format(FMT));
+    if (task instanceof EpicTask epicTask) {
+      sb.append(quote(joinIds(epicTask.getSubtaskIds())));
+    } else {
+      sb.append(quote(""));
+    }
     sb.append(DELIMITER);
-    sb.append(task.getUpdateDate().format(FMT));
+
+    sb.append(task.getStartTime() != null ? quote(task.getStartTime().toString()) : quote(""))
+        .append(DELIMITER);
+    sb.append(task.getDuration() != null ? quote(task.getDuration().toString()) : quote(""))
+        .append(DELIMITER);
+
+    sb.append(quote(task.getCreationDate().format(FMT))).append(DELIMITER);
+    sb.append(quote(task.getUpdateDate().format(FMT)));
+
     return sb.toString();
   }
 
-  /**
-   * Determines the type name of a task for CSV serialization.
-   *
-   * @param task Task object to get type for
-   * @return String representing the task type
-   * @throws CvsMapperException if task is of unknown type
-   */
   private static String taskType(Task task) {
     return switch (task) {
       case RegularTask ignored -> REGULAR_TASK_NAME;
       case SubTask ignored -> SUBTASK_TASK_NAME;
       case EpicTask ignored -> EPIC_TASK_NAME;
-      default -> throw new CvsMapperException("Unknown Task subclass");
+      default ->
+          throw new CvsMapperException("Unknown Task subclass: " + task.getClass().getName());
     };
-  }
-
-  /**
-   * Joins a set of integer IDs into a semicolon-delimited string.
-   *
-   * @param ids Set of integer IDs to join
-   * @return Empty string if set is empty, otherwise semicolon-delimited string of IDs
-   */
-  private static String join(Set<Integer> ids) {
-    return ids.isEmpty() ? "" : ids.stream().map(Object::toString).collect(Collectors.joining(";"));
-  }
-
-  /**
-   * Wraps a string in quotes and escapes any quotes within.
-   *
-   * @param s String to quote
-   * @return Quoted and escaped string
-   */
-  private static String quote(String s) {
-    return '"' + s.replace("\"", ESCAPED_QUOTE) + '"';
-  }
-
-  /**
-   * Removes surrounding quotes and unescapes any escaped quotes within.
-   *
-   * @param s Quoted string to unquote
-   * @return Unquoted and unescaped string
-   */
-  private static String unquote(String s) {
-    return s.substring(1, s.length() - 1).replace(ESCAPED_QUOTE, "\"");
   }
 }

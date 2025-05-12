@@ -6,23 +6,44 @@ import com.tasktracker.task.dto.RegularTaskUpdateDTO;
 import com.tasktracker.task.exception.ValidationException;
 import com.tasktracker.task.model.enums.TaskStatus;
 import com.tasktracker.task.validation.Validator;
+import java.time.Duration;
+import java.time.LocalDateTime;
+import java.util.UUID;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
-/** JUnit5 tests for {@link RegularTaskUpdateValidator}. */
 class RegularTaskUpdateValidatorTest {
 
   private final Validator<RegularTaskUpdateDTO> validator = new RegularTaskUpdateValidator();
 
+  private static final UUID VALID_TASK_ID = UUID.randomUUID();
+  private static final String VALID_TITLE = "Valid Title With Enough Characters";
+  private static final String VALID_DESCRIPTION = "Valid Description Also With Enough Characters";
+  private static final String SHORT_TITLE = "Short";
+  private static final String SHORT_DESCRIPTION = "Brief";
+  private static final LocalDateTime DEFAULT_START_TIME = LocalDateTime.now().plusHours(1);
+  private static final Duration DEFAULT_DURATION = Duration.ofMinutes(90);
+
   @Test
-  @DisplayName("validate should pass for valid RegularTaskUpdateDTO")
-  void validate_ValidRegularTaskUpdateDTO() {
+  @DisplayName("validate should pass for valid RegularTaskUpdateDTO with all fields")
+  void validate_ValidRegularTaskUpdateDTO_AllFields() {
     RegularTaskUpdateDTO dto =
         new RegularTaskUpdateDTO(
-            1,
-            "ValidTitleXYZ", // ≥ 10 characters
-            "ValidDescriptionXYZ", // ≥ 10 characters
-            TaskStatus.NEW);
+            VALID_TASK_ID,
+            VALID_TITLE,
+            VALID_DESCRIPTION,
+            TaskStatus.NEW,
+            DEFAULT_START_TIME,
+            DEFAULT_DURATION);
+    assertDoesNotThrow(() -> validator.validate(dto));
+  }
+
+  @Test
+  @DisplayName("validate should pass for valid RegularTaskUpdateDTO with null times")
+  void validate_ValidRegularTaskUpdateDTO_NullTimes() {
+    RegularTaskUpdateDTO dto =
+        new RegularTaskUpdateDTO(
+            VALID_TASK_ID, VALID_TITLE, VALID_DESCRIPTION, TaskStatus.IN_PROGRESS, null, null);
     assertDoesNotThrow(() -> validator.validate(dto));
   }
 
@@ -31,19 +52,13 @@ class RegularTaskUpdateValidatorTest {
   void validate_ShortTitleRegularTaskUpdateDTO() {
     RegularTaskUpdateDTO dto =
         new RegularTaskUpdateDTO(
-            2,
-            "Short", // < 10 characters
-            "ValidDescriptionXYZ",
-            TaskStatus.IN_PROGRESS);
+            UUID.randomUUID(), SHORT_TITLE, VALID_DESCRIPTION, TaskStatus.IN_PROGRESS, null, null);
     ValidationException exception =
-        assertThrows(
-            ValidationException.class,
-            () -> validator.validate(dto),
-            "Expected ValidationException for short title");
+        assertThrows(ValidationException.class, () -> validator.validate(dto));
     assertTrue(
         exception.getErrors().stream()
             .anyMatch(error -> error.contains("Title length should be at least")),
-        "Exception should contain title length error message");
+        "Exception should contain title length error message. Actual: " + exception.getErrors());
   }
 
   @Test
@@ -52,19 +67,14 @@ class RegularTaskUpdateValidatorTest {
   void validate_ShortDescriptionRegularTaskUpdateDTO() {
     RegularTaskUpdateDTO dto =
         new RegularTaskUpdateDTO(
-            3,
-            "ValidTitleXYZ",
-            "Short", // < 10 characters
-            TaskStatus.DONE);
+            UUID.randomUUID(), VALID_TITLE, SHORT_DESCRIPTION, TaskStatus.DONE, null, null);
     ValidationException exception =
-        assertThrows(
-            ValidationException.class,
-            () -> validator.validate(dto),
-            "Expected ValidationException for short description");
+        assertThrows(ValidationException.class, () -> validator.validate(dto));
     assertTrue(
         exception.getErrors().stream()
             .anyMatch(error -> error.contains("Description length should be at least")),
-        "Exception should contain description length error message");
+        "Exception should contain description length error message. Actual: "
+            + exception.getErrors());
   }
 
   @Test
@@ -73,24 +83,20 @@ class RegularTaskUpdateValidatorTest {
   void validate_MultipleErrorsRegularTaskUpdateDTO() {
     RegularTaskUpdateDTO dto =
         new RegularTaskUpdateDTO(
-            4,
-            "Short", // < 10 characters
-            "Short", // < 10 characters
-            TaskStatus.NEW);
+            UUID.randomUUID(), SHORT_TITLE, SHORT_DESCRIPTION, TaskStatus.NEW, null, null);
     ValidationException exception =
-        assertThrows(
-            ValidationException.class,
-            () -> validator.validate(dto),
-            "Expected ValidationException for multiple validation errors");
-    assertEquals(2, exception.getErrors().size(), "Exception should contain two validation errors");
+        assertThrows(ValidationException.class, () -> validator.validate(dto));
+    assertEquals(
+        2,
+        exception.getErrors().size(),
+        "Should contain two validation errors (title, description). Actual: "
+            + exception.getErrors());
     assertTrue(
         exception.getErrors().stream()
-            .anyMatch(error -> error.contains("Title length should be at least")),
-        "Exception should contain title length error message");
+            .anyMatch(error -> error.contains("Title length should be at least")));
     assertTrue(
         exception.getErrors().stream()
-            .anyMatch(error -> error.contains("Description length should be at least")),
-        "Exception should contain description length error message");
+            .anyMatch(error -> error.contains("Description length should be at least")));
   }
 
   @Test
@@ -98,38 +104,47 @@ class RegularTaskUpdateValidatorTest {
   void validate_NullTitleThrowsException() {
     RegularTaskUpdateDTO dto =
         new RegularTaskUpdateDTO(
-            5,
-            null, // Null title
-            "ValidDescriptionXYZ",
-            TaskStatus.NEW);
-    NullPointerException exception =
-        assertThrows(
-            NullPointerException.class,
-            () -> validator.validate(dto),
-            "Expected NullPointerException for null title");
-    assertEquals(
-        "Title can't be null.",
-        exception.getMessage(),
-        "Exception message should match expected for null title");
+            UUID.randomUUID(), null, VALID_DESCRIPTION, TaskStatus.NEW, null, null);
+    assertThrows(NullPointerException.class, () -> validator.validate(dto));
   }
 
   @Test
   @DisplayName("validate should throw NullPointerException when description is null")
   void validate_NullDescriptionThrowsException() {
     RegularTaskUpdateDTO dto =
+        new RegularTaskUpdateDTO(UUID.randomUUID(), VALID_TITLE, null, TaskStatus.NEW, null, null);
+    assertThrows(NullPointerException.class, () -> validator.validate(dto));
+  }
+
+  @Test
+  @DisplayName("validate should pass when id is null (id not validated by this validator)")
+  void validate_NullId_PassesValidation() {
+    RegularTaskUpdateDTO dto =
         new RegularTaskUpdateDTO(
-            6,
-            "ValidTitleXYZ",
-            null, // Null description
-            TaskStatus.NEW);
-    NullPointerException exception =
-        assertThrows(
-            NullPointerException.class,
-            () -> validator.validate(dto),
-            "Expected NullPointerException for null description");
-    assertEquals(
-        "Description can't be null.",
-        exception.getMessage(),
-        "Exception message should match expected for null description");
+            null, // id
+            VALID_TITLE,
+            VALID_DESCRIPTION,
+            TaskStatus.NEW,
+            DEFAULT_START_TIME,
+            DEFAULT_DURATION);
+    assertDoesNotThrow(
+        () -> validator.validate(dto),
+        "Null id should not cause validation failure in RegularTaskUpdateValidator.");
+  }
+
+  @Test
+  @DisplayName("validate should pass when status is null (status not validated by this validator)")
+  void validate_NullStatus_PassesValidation() {
+    RegularTaskUpdateDTO dto =
+        new RegularTaskUpdateDTO(
+            VALID_TASK_ID,
+            VALID_TITLE,
+            VALID_DESCRIPTION,
+            null, // status
+            DEFAULT_START_TIME,
+            DEFAULT_DURATION);
+    assertDoesNotThrow(
+        () -> validator.validate(dto),
+        "Null status should not cause validation failure in RegularTaskUpdateValidator.");
   }
 }

@@ -1,3 +1,5 @@
 package com.tasktracker.task.dto;
 
-public record EpicTaskUpdateDTO(int id, String title, String description) {}
+import java.util.UUID;
+
+public record EpicTaskUpdateDTO(UUID id, String title, String description) {}
