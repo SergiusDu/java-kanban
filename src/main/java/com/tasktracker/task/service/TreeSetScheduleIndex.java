@@ -47,12 +47,6 @@ public final class TreeSetScheduleIndex implements ScheduleIndex {
       return false;
     }
 
-    if (taskToCheck instanceof EpicTask epicToCheck
-        && existingTask instanceof SubTask sub
-        && Objects.equals(sub.getEpicTaskId(), epicToCheck.getId())) {
-      return false;
-    }
-
     if (existingTask instanceof EpicTask existingEpic
         && taskToCheck instanceof SubTask sub
         && Objects.equals(sub.getEpicTaskId(), existingEpic.getId())) {
@@ -90,7 +84,8 @@ public final class TreeSetScheduleIndex implements ScheduleIndex {
     if (checkOverlapAgainstCollection(newTask, tempTimeLine)) {
       throw new ValidationException(
           String.format(
-              "Time overlap detected for updated task. Task ID %s with start time '%s' and end time '%s' overlaps with an existing task in schedule",
+              "Time overlap detected for updated task. Task ID %s with start time '%s' and end time '%s'"
+                  + " overlaps with an existing task in schedule",
               newTask.getId(), newTask.getStartTime(), newTask.getEndTime()));
     }
 
@@ -139,7 +134,8 @@ public final class TreeSetScheduleIndex implements ScheduleIndex {
     if (hasOverlap(newTask)) {
       throw new ValidationException(
           String.format(
-              "Time overlap detected. Task ID %s with start time '%s' and end time '%s' overlaps with an existing task in schedule",
+              "Time overlap detected. Task ID %s with start time '%s' and end time '%s'"
+                  + " overlaps with an existing task in schedule",
               newTask.getId(), newTask.getStartTime(), newTask.getEndTime()));
     }
   }

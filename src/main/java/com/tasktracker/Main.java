@@ -177,6 +177,7 @@ public class Main {
     System.out.println("History after deleting epic with subtasks:");
     printHistory(tm);
     System.out.print(TEST_SECTION_END);
+    tm.clearAllTasks();
   }
 
   private static void printHistory(TaskManager tm) {
@@ -252,6 +253,7 @@ public class Main {
     System.out.println("Check getTaskById for RegularTask2: " + maybeReg2);
 
     System.out.print(TEST_SECTION_END);
+    tm.clearAllTasks();
   }
 
   private static void testAdditionalEpicScenarios()
@@ -318,6 +320,7 @@ public class Main {
     updatedEpicA.ifPresent(task -> System.out.println("Actual Epic A status: " + task.getStatus()));
 
     System.out.print(TEST_SECTION_END);
+    tm.clearAllTasks();
   }
 
   private static void testRemovingTasks() throws ValidationException, TaskNotFoundException {
@@ -383,6 +386,7 @@ public class Main {
     }
 
     System.out.print(TEST_SECTION_END);
+    tm.clearAllTasks();
   }
 
   private static void testUpdateEpicAndSubtaskStatus()
@@ -453,6 +457,7 @@ public class Main {
         "EpicB status should be DONE now. Actual: "
             + tm.getTask(epicB.getId()).map(Task::getStatus));
     System.out.print(TEST_SECTION_END);
+    tm.clearAllTasks();
   }
 
   private static void testRemoveTasksByType() throws ValidationException, TaskNotFoundException {
@@ -505,6 +510,7 @@ public class Main {
     printAll(tm);
 
     System.out.print(TEST_SECTION_END);
+    tm.clearAllTasks();
   }
 
   private static void testBoundaryCases() throws ValidationException {
@@ -574,6 +580,7 @@ public class Main {
     System.out.println("Final state in testBoundaryCases:");
     printAll(tm);
     System.out.print(TEST_SECTION_END);
+    tm.clearAllTasks();
   }
 
   private static void printAll(TaskManager tm) {

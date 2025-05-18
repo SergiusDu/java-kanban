@@ -174,10 +174,8 @@ public class TaskManagerImpl implements TaskManager {
   }
 
   private Optional<Task> removeTaskFromStoreAndHistory(UUID id) {
-    index.remove(
-        store
-            .getTaskById(id)
-            .orElseThrow(() -> new NoSuchElementException("Task not found with ID: " + id)));
+    Optional<Task> task = store.getTaskById(id);
+    task.ifPresent(index::remove);
     historyManager.remove(id);
     return store.removeTask(id);
   }
@@ -248,7 +246,6 @@ public class TaskManagerImpl implements TaskManager {
             currentTime,
             dto.startTime(),
             null);
-    index.add(newTask);
     store.addTask(newTask);
   }
 

@@ -630,17 +630,6 @@ public class InMemoryTaskManagerTest {
   }
 
   @Test
-  @DisplayName("addTask (Epic) with start time should add to schedule")
-  void testAddEpicTask_WithStartTime_AddsToSchedule() throws ValidationException {
-    EpicTaskCreationDTO dto =
-        createValidEpicTaskCreationDTOWithTime("EpicTime", DEFAULT_START_TIME);
-    EpicTask created = addAndRetrieveEpicTask(dto);
-    assertEquals(DEFAULT_START_TIME, created.getStartTime());
-    assertTrue(
-        manager.getPrioritizedTasks().stream().anyMatch(t -> t.getId().equals(created.getId())));
-  }
-
-  @Test
   @DisplayName("addTask (Epic) should throw ValidationException for invalid title")
   void testAddEpicTask_InvalidTitle_ThrowsValidationException() {
     EpicTaskCreationDTO dto =
