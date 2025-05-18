@@ -5,6 +5,7 @@ import static org.junit.jupiter.api.Assertions.*;
 import com.tasktracker.task.dto.SubTaskCreationDTO;
 import com.tasktracker.task.exception.ValidationException;
 import com.tasktracker.task.validation.Validator;
+import java.util.UUID;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
@@ -15,14 +16,17 @@ class SubTaskCreationValidatorTest {
   @Test
   @DisplayName("validate should pass for valid SubTaskCreationDTO")
   void validate_ValidSubTaskCreationDTO() {
-    SubTaskCreationDTO dto = new SubTaskCreationDTO("ValidTitleXYZ", "ValidDescriptionXYZ", 10);
+    SubTaskCreationDTO dto =
+        new SubTaskCreationDTO(
+            "ValidTitleXYZ", "ValidDescriptionXYZ", UUID.randomUUID(), null, null);
     assertDoesNotThrow(() -> validator.validate(dto));
   }
 
   @Test
   @DisplayName("validate should throw ValidationException for short title in SubTaskCreationDTO")
   void validate_ShortTitleSubTaskCreationDTO() {
-    SubTaskCreationDTO dto = new SubTaskCreationDTO("Short", "ValidDescriptionXYZ", 10);
+    SubTaskCreationDTO dto =
+        new SubTaskCreationDTO("Short", "ValidDescriptionXYZ", UUID.randomUUID(), null, null);
     ValidationException exception =
         assertThrows(
             ValidationException.class,
@@ -38,7 +42,8 @@ class SubTaskCreationValidatorTest {
   @DisplayName(
       "validate should throw ValidationException for short description in SubTaskCreationDTO")
   void validate_ShortDescriptionSubTaskCreationDTO() {
-    SubTaskCreationDTO dto = new SubTaskCreationDTO("ValidTitleXYZ", "Short", 10);
+    SubTaskCreationDTO dto =
+        new SubTaskCreationDTO("ValidTitleXYZ", "Short", UUID.randomUUID(), null, null);
     ValidationException exception =
         assertThrows(
             ValidationException.class,
@@ -54,7 +59,8 @@ class SubTaskCreationValidatorTest {
   @DisplayName(
       "validate should throw ValidationException for multiple errors in SubTaskCreationDTO")
   void validate_MultipleErrorsSubTaskCreationDTO() {
-    SubTaskCreationDTO dto = new SubTaskCreationDTO("Short", "Short", 10);
+    SubTaskCreationDTO dto =
+        new SubTaskCreationDTO("Short", "Short", UUID.randomUUID(), null, null);
     ValidationException exception =
         assertThrows(
             ValidationException.class,
@@ -74,7 +80,8 @@ class SubTaskCreationValidatorTest {
   @Test
   @DisplayName("validate should throw NullPointerException when title is null")
   void validate_NullTitleThrowsException() {
-    SubTaskCreationDTO dto = new SubTaskCreationDTO(null, "ValidDescriptionXYZ", 10);
+    SubTaskCreationDTO dto =
+        new SubTaskCreationDTO(null, "ValidDescriptionXYZ", UUID.randomUUID(), null, null);
     NullPointerException exception =
         assertThrows(
             NullPointerException.class,
@@ -89,7 +96,8 @@ class SubTaskCreationValidatorTest {
   @Test
   @DisplayName("validate should throw NullPointerException when description is null")
   void validate_NullDescriptionThrowsException() {
-    SubTaskCreationDTO dto = new SubTaskCreationDTO("ValidTitleXYZ", null, 10);
+    SubTaskCreationDTO dto =
+        new SubTaskCreationDTO("ValidTitleXYZ", null, UUID.randomUUID(), null, null);
     NullPointerException exception =
         assertThrows(
             NullPointerException.class,

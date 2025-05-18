@@ -2,13 +2,14 @@ package com.tasktracker.task.model.implementations;
 
 import java.time.LocalDateTime;
 import java.util.Objects;
+import java.util.UUID;
 
 /**
  * Represents a view of a specific task, containing details such as the ID of the associated task
  * and the timestamp when the view was created.
  */
 public final class TaskView implements Comparable<TaskView> {
-  private final int taskId;
+  private final UUID taskId;
   private final LocalDateTime viewDateTime;
 
   /**
@@ -17,9 +18,9 @@ public final class TaskView implements Comparable<TaskView> {
    * @param taskId the ID of the task being viewed
    * @param viewDateTime the timestamp when the task view was created
    */
-  public TaskView(int taskId, LocalDateTime viewDateTime) {
-    this.viewDateTime = viewDateTime;
-    this.taskId = taskId;
+  public TaskView(UUID taskId, LocalDateTime viewDateTime) {
+    this.viewDateTime = Objects.requireNonNull(viewDateTime, "ViewDateTime can't be null");
+    this.taskId = Objects.requireNonNull(taskId, "Task Id can't be null");
   }
 
   /**
@@ -36,7 +37,7 @@ public final class TaskView implements Comparable<TaskView> {
    *
    * @return the ID of the associated task
    */
-  public int getTaskId() {
+  public UUID getTaskId() {
     return taskId;
   }
 
@@ -51,7 +52,7 @@ public final class TaskView implements Comparable<TaskView> {
   public boolean equals(Object object) {
     if (object == null || getClass() != object.getClass()) return false;
     TaskView taskView = (TaskView) object;
-    return taskId == taskView.taskId;
+    return taskId.equals(taskView.taskId);
   }
 
   /**
@@ -86,6 +87,6 @@ public final class TaskView implements Comparable<TaskView> {
    */
   @Override
   public int compareTo(TaskView other) {
-    return Integer.compare(this.taskId, other.getTaskId());
+    return this.taskId.compareTo(other.getTaskId());
   }
 }

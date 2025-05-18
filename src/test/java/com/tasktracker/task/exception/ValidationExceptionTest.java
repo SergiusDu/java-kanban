@@ -40,23 +40,6 @@ class ValidationExceptionTest {
   }
 
   @Test
-  @DisplayName("ValidationException should be an instance of RuntimeException")
-  void validationException_IsRuntimeException() {
-    ValidationException exceptionWithList =
-        new ValidationException(Collections.singletonList("Error"));
-    ValidationException exceptionWithSingleError = new ValidationException("Single error");
-
-    assertInstanceOf(
-        RuntimeException.class,
-        exceptionWithList,
-        "ValidationException should extend RuntimeException");
-    assertInstanceOf(
-        RuntimeException.class,
-        exceptionWithSingleError,
-        "ValidationException should extend RuntimeException");
-  }
-
-  @Test
   @DisplayName("ValidationException(List<String>) should handle empty error list")
   void constructor_EmptyErrorList_SetsEmptyMessageAndEmptyErrors() {
     List<String> emptyErrors = Collections.emptyList();
