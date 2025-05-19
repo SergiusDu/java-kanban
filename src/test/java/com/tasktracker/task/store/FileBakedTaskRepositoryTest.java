@@ -4,6 +4,7 @@ import static org.junit.jupiter.api.Assertions.*;
 
 import com.tasktracker.cvs.TaskCsvMapper; // Импорт для доступа к CSV_HEADER
 import com.tasktracker.task.dto.*;
+import com.tasktracker.task.exception.OverlapException;
 import com.tasktracker.task.exception.ValidationException;
 import com.tasktracker.task.manager.InMemoryHistoryManager;
 import com.tasktracker.task.manager.TaskManager;
@@ -115,7 +116,7 @@ class FileBakedTaskRepositoryTest {
   }
 
   private RegularTask addAndRetrieveRegularTask(RegularTaskCreationDTO dto)
-      throws ValidationException {
+      throws ValidationException, OverlapException {
     Set<UUID> idsBefore =
         manager.getAllTasksByClass(RegularTask.class).stream()
             .map(Task::getId)
@@ -134,7 +135,7 @@ class FileBakedTaskRepositoryTest {
   }
 
   private SubTask addAndRetrieveSubTask(SubTaskCreationDTO dto)
-      throws ValidationException, TaskNotFoundException {
+      throws ValidationException, TaskNotFoundException, OverlapException {
     Set<UUID> idsBefore =
         manager.getAllTasksByClass(SubTask.class).stream()
             .map(Task::getId)
@@ -153,7 +154,7 @@ class FileBakedTaskRepositoryTest {
 
   @Test
   @DisplayName("Should retrieve all tasks, also checking persistence")
-  void testGetAllTasks() throws ValidationException {
+  void testGetAllTasks() throws ValidationException, OverlapException {
     addAndRetrieveRegularTask(
         createValidRegularTaskCreationDTO("Task1", DEFAULT_START_TIME, DEFAULT_DURATION));
     addAndRetrieveRegularTask(
@@ -172,7 +173,7 @@ class FileBakedTaskRepositoryTest {
 
   @Test
   @DisplayName("Should clear all tasks, also checking file persistence")
-  void testClearAllTasks() throws ValidationException, IOException {
+  void testClearAllTasks() throws ValidationException, IOException, OverlapException {
     addAndRetrieveRegularTask(createValidRegularTaskCreationDTO("ToClear", null, null));
     manager.clearAllTasks();
     assertEquals(0, manager.getAllTasks().size());
@@ -210,7 +211,7 @@ class FileBakedTaskRepositoryTest {
 
   @Test
   @DisplayName("Should add a new RegularTask and persist it")
-  void testAddRegularTask() throws ValidationException {
+  void testAddRegularTask() throws ValidationException, OverlapException {
     RegularTaskCreationDTO dto =
         createValidRegularTaskCreationDTO("AddReg", DEFAULT_START_TIME, DEFAULT_DURATION);
     RegularTask created = addAndRetrieveRegularTask(dto);
@@ -255,7 +256,7 @@ class FileBakedTaskRepositoryTest {
 
   @Test
   @DisplayName("Should add a SubTask to an existing EpicTask and persist changes")
-  void testAddSubTask() throws ValidationException, TaskNotFoundException {
+  void testAddSubTask() throws ValidationException, TaskNotFoundException, OverlapException {
     EpicTask initialEpic =
         addAndRetrieveEpicTask(createValidEpicTaskCreationDTO("ParentEpicForSub", null));
     SubTaskCreationDTO subDto =
@@ -309,7 +310,7 @@ class FileBakedTaskRepositoryTest {
 
   @Test
   @DisplayName("Should update an existing RegularTask and persist it")
-  void testUpdateRegularTask() throws ValidationException, TaskNotFoundException {
+  void testUpdateRegularTask() throws ValidationException, TaskNotFoundException, OverlapException {
     RegularTask task =
         addAndRetrieveRegularTask(createValidRegularTaskCreationDTO("RegUpdateOrig", null, null));
     RegularTaskUpdateDTO updateDto =
@@ -340,7 +341,7 @@ class FileBakedTaskRepositoryTest {
 
   @Test
   @DisplayName("Should throw ValidationException when updating RegularTask with invalid data")
-  void testUpdateRegularTaskWithInvalidData() throws ValidationException {
+  void testUpdateRegularTaskWithInvalidData() throws ValidationException, OverlapException {
     RegularTask task =
         addAndRetrieveRegularTask(
             createValidRegularTaskCreationDTO("RegUpdateInvalid", null, null));
@@ -357,7 +358,8 @@ class FileBakedTaskRepositoryTest {
 
   @Test
   @DisplayName("Should calculate EpicTask status correctly and persist changes")
-  void testCalculateEpicTaskStatus() throws ValidationException, TaskNotFoundException {
+  void testCalculateEpicTaskStatus()
+      throws ValidationException, TaskNotFoundException, OverlapException {
     EpicTask epicTask =
         addAndRetrieveEpicTask(createValidEpicTaskCreationDTO("EpicStatusCalc", null));
     SubTask subTask1 =
@@ -408,7 +410,8 @@ class FileBakedTaskRepositoryTest {
 
   @Test
   @DisplayName("Should remove a RegularTask by ID, return it, and persist removal")
-  void testRemoveRegularTaskById() throws ValidationException, TaskNotFoundException {
+  void testRemoveRegularTaskById()
+      throws ValidationException, TaskNotFoundException, OverlapException {
     RegularTask created =
         addAndRetrieveRegularTask(createValidRegularTaskCreationDTO("RegRemove", null, null));
     Optional<Task> removed = manager.removeTaskById(created.getId());
@@ -428,7 +431,7 @@ class FileBakedTaskRepositoryTest {
 
   @Test
   @DisplayName("Should remove a SubTask by ID, verify EpicTask status updates, and persist")
-  void testRemoveSubTaskById() throws ValidationException, TaskNotFoundException {
+  void testRemoveSubTaskById() throws ValidationException, TaskNotFoundException, OverlapException {
     EpicTask epic =
         addAndRetrieveEpicTask(createValidEpicTaskCreationDTO("EpicForSubRemove", null));
     SubTask sub1 =
@@ -476,7 +479,8 @@ class FileBakedTaskRepositoryTest {
 
   @Test
   @DisplayName("Should remove an EpicTask by ID along with all its SubTasks and persist")
-  void testRemoveEpicTaskById() throws ValidationException, TaskNotFoundException {
+  void testRemoveEpicTaskById()
+      throws ValidationException, TaskNotFoundException, OverlapException {
     EpicTask epic =
         addAndRetrieveEpicTask(createValidEpicTaskCreationDTO("EpicToRemoveFull", null));
     SubTask sub1 =
@@ -503,7 +507,8 @@ class FileBakedTaskRepositoryTest {
 
   @Test
   @DisplayName("Should remove all RegularTasks by type and persist")
-  void testRemoveTasksByTypeRegularTask() throws ValidationException, TaskNotFoundException {
+  void testRemoveTasksByTypeRegularTask()
+      throws ValidationException, TaskNotFoundException, OverlapException {
     addAndRetrieveRegularTask(createValidRegularTaskCreationDTO("RegTypeRemove1", null, null));
     addAndRetrieveRegularTask(createValidRegularTaskCreationDTO("RegTypeRemove2", null, null));
     EpicTask epic = addAndRetrieveEpicTask(createValidEpicTaskCreationDTO("EpicTypeKeep", null));
@@ -525,7 +530,8 @@ class FileBakedTaskRepositoryTest {
 
   @Test
   @DisplayName("Should remove all SubTasks by type, update Epic status to NEW, and persist")
-  void testRemoveTasksByTypeSubTask() throws ValidationException, TaskNotFoundException {
+  void testRemoveTasksByTypeSubTask()
+      throws ValidationException, TaskNotFoundException, OverlapException {
     EpicTask epic =
         addAndRetrieveEpicTask(createValidEpicTaskCreationDTO("EpicForSubRemoveType", null));
     SubTask sub1 =
@@ -562,7 +568,8 @@ class FileBakedTaskRepositoryTest {
 
   @Test
   @DisplayName("Should remove all EpicTasks by type, their SubTasks, and persist")
-  void testRemoveTasksByTypeEpicTask() throws ValidationException, TaskNotFoundException {
+  void testRemoveTasksByTypeEpicTask()
+      throws ValidationException, TaskNotFoundException, OverlapException {
     EpicTask epic =
         addAndRetrieveEpicTask(createValidEpicTaskCreationDTO("EpicTypeRemoveFull", null));
     addAndRetrieveSubTask(
@@ -591,7 +598,8 @@ class FileBakedTaskRepositoryTest {
 
   @Test
   @DisplayName("Should return empty Optional when removing a non-existent task by ID")
-  void testRemoveTaskByNonExistentId() throws ValidationException, TaskNotFoundException {
+  void testRemoveTaskByNonExistentId()
+      throws ValidationException, TaskNotFoundException, OverlapException {
     Optional<Task> removed = manager.removeTaskById(UUID.randomUUID());
     assertTrue(removed.isEmpty());
   }
@@ -600,7 +608,7 @@ class FileBakedTaskRepositoryTest {
   @DisplayName(
       "Should verify EpicTask status is DONE after removing last incomplete SubTask and persist")
   void testRemoveLastIncompleteSubTaskVerifiesEpicDone()
-      throws ValidationException, TaskNotFoundException {
+      throws ValidationException, TaskNotFoundException, OverlapException {
     EpicTask epic = addAndRetrieveEpicTask(createValidEpicTaskCreationDTO("EpicDoneVerify", null));
     SubTask sub1 =
         addAndRetrieveSubTask(
@@ -664,7 +672,7 @@ class FileBakedTaskRepositoryTest {
 
   @Test
   @DisplayName("Accessing a task should add it to the history")
-  void testAddTaskToHistoryOnAccess() throws ValidationException {
+  void testAddTaskToHistoryOnAccess() throws ValidationException, OverlapException {
     RegularTask regularTask =
         addAndRetrieveRegularTask(createValidRegularTaskCreationDTO("HistoryAccess", null, null));
     manager.getTask(regularTask.getId());
@@ -676,7 +684,8 @@ class FileBakedTaskRepositoryTest {
 
   @Test
   @DisplayName("History should not contain deleted tasks")
-  void testHistoryShouldNotContainDeletedTasks() throws ValidationException, TaskNotFoundException {
+  void testHistoryShouldNotContainDeletedTasks()
+      throws ValidationException, TaskNotFoundException, OverlapException {
     RegularTask regularTask =
         addAndRetrieveRegularTask(createValidRegularTaskCreationDTO("HistoryDelete", null, null));
     manager.getTask(regularTask.getId());
@@ -689,7 +698,7 @@ class FileBakedTaskRepositoryTest {
 
   @Test
   @DisplayName("History should be updated in correct order of task access (LRU)")
-  void testHistoryAccessOrder() throws ValidationException {
+  void testHistoryAccessOrder() throws ValidationException, OverlapException {
     RegularTask task1 =
         addAndRetrieveRegularTask(createValidRegularTaskCreationDTO("HistOrder1", null, null));
     RegularTask task2 =
@@ -713,7 +722,7 @@ class FileBakedTaskRepositoryTest {
   @Test
   @DisplayName("File content should reflect added tasks")
   void testFileContent_AfterAddingTasks()
-      throws ValidationException, IOException, TaskNotFoundException {
+      throws ValidationException, IOException, TaskNotFoundException, OverlapException {
     RegularTask task1 =
         addAndRetrieveRegularTask(
             createValidRegularTaskCreationDTO(
@@ -778,7 +787,8 @@ class FileBakedTaskRepositoryTest {
 
   @Test
   @DisplayName("Tasks should persist after adding and reinitializing manager")
-  void testTasksPersist_AfterAddingAndReinitializingManager() throws ValidationException {
+  void testTasksPersist_AfterAddingAndReinitializingManager()
+      throws ValidationException, OverlapException {
     RegularTask task1 =
         addAndRetrieveRegularTask(createValidRegularTaskCreationDTO("PersistAdd1", null, null));
     EpicTask epic1 = addAndRetrieveEpicTask(createValidEpicTaskCreationDTO("PersistAddEpic", null));
@@ -798,7 +808,7 @@ class FileBakedTaskRepositoryTest {
   @Test
   @DisplayName("Tasks should persist after updating and reinitializing manager")
   void testTasksPersist_AfterUpdatingAndReinitializingManager()
-      throws ValidationException, TaskNotFoundException {
+      throws ValidationException, TaskNotFoundException, OverlapException {
     RegularTask task1 =
         addAndRetrieveRegularTask(
             createValidRegularTaskCreationDTO("PersistUpdateOrig", null, null));
@@ -820,7 +830,7 @@ class FileBakedTaskRepositoryTest {
   @Test
   @DisplayName("Tasks should persist after removing and reinitializing manager")
   void testTasksPersist_AfterRemovingAndReinitializingManager()
-      throws ValidationException, TaskNotFoundException {
+      throws ValidationException, TaskNotFoundException, OverlapException {
     RegularTask task1 =
         addAndRetrieveRegularTask(createValidRegularTaskCreationDTO("PersistRemove1", null, null));
     RegularTask task2 =

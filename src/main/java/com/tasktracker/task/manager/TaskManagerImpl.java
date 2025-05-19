@@ -1,6 +1,7 @@
 package com.tasktracker.task.manager;
 
 import com.tasktracker.task.dto.*;
+import com.tasktracker.task.exception.OverlapException;
 import com.tasktracker.task.exception.ValidationException;
 import com.tasktracker.task.model.enums.TaskStatus;
 import com.tasktracker.task.model.implementations.EpicTask;
@@ -130,7 +131,10 @@ public class TaskManagerImpl implements TaskManager {
 
   @Override
   public Optional<Task> removeTaskById(final UUID id)
-      throws UnsupportedOperationException, ValidationException, TaskNotFoundException {
+      throws UnsupportedOperationException,
+          ValidationException,
+          TaskNotFoundException,
+          OverlapException {
     Optional<Task> optionalTask = store.getTaskById(id);
     if (optionalTask.isEmpty()) return Optional.empty();
     Task taskToDelete = optionalTask.get();
@@ -193,8 +197,17 @@ public class TaskManagerImpl implements TaskManager {
     return result;
   }
 
+  /**
+   * Creates and adds a new regular task to the repository based on the provided DTO.
+   *
+   * @param dto The DTO containing the required fields for creating a regular task
+   * @return The newly created and persisted RegularTask
+   * @throws ValidationException if the DTO validation fails
+   * @throws NullPointerException if the DTO is null
+   */
   @Override
-  public void addTask(final RegularTaskCreationDTO dto) throws ValidationException {
+  public RegularTask addTask(final RegularTaskCreationDTO dto)
+      throws ValidationException, OverlapException {
     validateDto(dto, RegularTaskCreationDTO.class);
     LocalDateTime creationTimestamp = LocalDateTime.now();
     RegularTask newTask =
@@ -208,7 +221,7 @@ public class TaskManagerImpl implements TaskManager {
             dto.startTime(),
             dto.duration());
     index.add(newTask);
-    store.addTask(newTask);
+    return store.addTask(newTask);
   }
 
   /**
@@ -231,8 +244,18 @@ public class TaskManagerImpl implements TaskManager {
     }
   }
 
+  /**
+   * Creates and adds a new Epic Task to the repository based on the provided DTO. The Epic Task is
+   * initialized with NEW status, empty subtasks set and current timestamps.
+   *
+   * @param dto The DTO containing creation data including title, description and optional start
+   *     time
+   * @return The newly created and persisted Epic Task
+   * @throws ValidationException if the DTO validation fails
+   * @throws NullPointerException if the DTO is null
+   */
   @Override
-  public void addTask(final EpicTaskCreationDTO dto) throws ValidationException {
+  public EpicTask addTask(final EpicTaskCreationDTO dto) throws ValidationException {
     validateDto(dto, EpicTaskCreationDTO.class);
     LocalDateTime currentTime = LocalDateTime.now();
     EpicTask newTask =
@@ -246,12 +269,23 @@ public class TaskManagerImpl implements TaskManager {
             currentTime,
             dto.startTime(),
             null);
-    store.addTask(newTask);
+    return store.addTask(newTask);
   }
 
+  /**
+   * Creates and adds a new Sub-Task to the repository, associating it with an existing Epic Task.
+   * The new Sub-Task is initialized with NEW status and current timestamps.
+   *
+   * @param dto the DTO containing Sub-Task creation data including title, description, Epic Task
+   *     ID, start time, and duration
+   * @return the newly created and persisted Sub-Task
+   * @throws ValidationException if the DTO validation fails or the Epic Task does not exist
+   * @throws TaskNotFoundException if the referenced Epic Task cannot be found
+   * @throws NullPointerException if the DTO is null
+   */
   @Override
-  public void addTask(final SubTaskCreationDTO dto)
-      throws ValidationException, TaskNotFoundException {
+  public SubTask addTask(final SubTaskCreationDTO dto)
+      throws ValidationException, TaskNotFoundException, OverlapException {
     Objects.requireNonNull(dto, "SubTaskCreationDTO cannot be null.");
     validateDto(dto, SubTaskCreationDTO.class);
     validateExistingTaskClassType(dto.epicId(), EpicTask.class);
@@ -268,13 +302,14 @@ public class TaskManagerImpl implements TaskManager {
             dto.startTime(),
             dto.duration());
     index.add(subTask);
-    store.addTask(subTask);
+    SubTask addedTask = store.addTask(subTask);
     attachSubTaskToEpicTask(subTask);
+    return addedTask;
   }
 
   @Override
   public RegularTask updateTask(final RegularTaskUpdateDTO dto)
-      throws ValidationException, TaskNotFoundException {
+      throws ValidationException, TaskNotFoundException, OverlapException {
     Objects.requireNonNull(dto, "RegularTaskUpdateDTO cannot be null.");
     validateDto(dto, RegularTaskUpdateDTO.class);
     RegularTask currentTask = getMatchingTaskOrThrow(dto.id(), RegularTask.class);
@@ -294,7 +329,7 @@ public class TaskManagerImpl implements TaskManager {
 
   @Override
   public SubTask updateTask(final SubTaskUpdateDTO dto)
-      throws ValidationException, TaskNotFoundException {
+      throws ValidationException, TaskNotFoundException, OverlapException {
     Objects.requireNonNull(dto, "SubTaskUpdateDTO cannot be null.");
     validateDto(dto, SubTaskUpdateDTO.class);
     SubTask oldSubTask = getMatchingTaskOrThrow(dto.id(), SubTask.class);
@@ -343,7 +378,7 @@ public class TaskManagerImpl implements TaskManager {
    */
   @Override
   public EpicTask updateTask(final EpicTaskUpdateDTO dto)
-      throws ValidationException, TaskNotFoundException {
+      throws ValidationException, TaskNotFoundException, OverlapException {
     Objects.requireNonNull(dto, "EpicTaskUpdateDTO cannot be null.");
     validateDto(dto, EpicTaskUpdateDTO.class);
     EpicTask oldTask = getMatchingTaskOrThrow(dto.id(), EpicTask.class);
@@ -455,7 +490,7 @@ public class TaskManagerImpl implements TaskManager {
    * @throws NullPointerException if subTask is null
    */
   private void attachSubTaskToEpicTask(final SubTask subTask)
-      throws ValidationException, TaskNotFoundException {
+      throws ValidationException, TaskNotFoundException, OverlapException {
     EpicTask oldEpicTask = getMatchingTaskOrThrow(subTask.getEpicTaskId(), EpicTask.class);
     Set<UUID> subTaskIds = new HashSet<>(oldEpicTask.getSubtaskIds());
     if (oldEpicTask.getSubtaskIds().contains(subTask.getId())) return;
@@ -478,7 +513,7 @@ public class TaskManagerImpl implements TaskManager {
   }
 
   private void removeSubTaskIdFromEpicTask(UUID epicId, UUID subtaskId)
-      throws TaskNotFoundException, ValidationException {
+      throws TaskNotFoundException, ValidationException, OverlapException {
     EpicTask oldEpicTask = getMatchingTaskOrThrow(epicId, EpicTask.class);
     Set<UUID> updatedSubTaskIds = new HashSet<>(oldEpicTask.getSubtaskIds());
     updatedSubTaskIds.remove(subtaskId);

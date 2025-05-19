@@ -3,6 +3,7 @@ package com.tasktracker.task.manager;
 import static org.junit.jupiter.api.Assertions.*;
 
 import com.tasktracker.task.dto.*;
+import com.tasktracker.task.exception.OverlapException;
 import com.tasktracker.task.exception.ValidationException;
 import com.tasktracker.task.model.enums.TaskStatus;
 import com.tasktracker.task.model.implementations.*;
@@ -92,7 +93,7 @@ public class InMemoryTaskManagerTest {
 
   // --- Helper Methods for Task Addition and Retrieval ---
   private RegularTask addAndRetrieveRegularTask(RegularTaskCreationDTO dto)
-      throws ValidationException {
+      throws ValidationException, OverlapException {
     Set<UUID> idsBefore =
         manager.getAllTasksByClass(RegularTask.class).stream()
             .map(Task::getId)
@@ -123,7 +124,7 @@ public class InMemoryTaskManagerTest {
   }
 
   private SubTask addAndRetrieveSubTask(SubTaskCreationDTO dto)
-      throws ValidationException, TaskNotFoundException {
+      throws ValidationException, TaskNotFoundException, OverlapException {
     Set<UUID> idsBefore =
         manager.getAllTasksByClass(SubTask.class).stream()
             .map(Task::getId)
@@ -201,7 +202,7 @@ public class InMemoryTaskManagerTest {
   @Test
   @DisplayName("getAllTasks should return all tasks of different types")
   void testGetAllTasks_WithMultipleTaskTypes_ReturnsAll()
-      throws ValidationException, TaskNotFoundException {
+      throws ValidationException, TaskNotFoundException, OverlapException {
     addAndRetrieveRegularTask(createValidRegularTaskCreationDTO("Reg1"));
     EpicTask epic1 = addAndRetrieveEpicTask(createValidEpicTaskCreationDTO("Epic1"));
     addAndRetrieveSubTask(createValidSubTaskCreationDTO("Sub1", epic1.getId()));
@@ -221,7 +222,7 @@ public class InMemoryTaskManagerTest {
   @Test
   @DisplayName("clearAllTasks should remove all tasks, clear history, and clear schedule")
   void testClearAllTasks_WithTasks_RemovesAllAndClearsHistoryAndSchedule()
-      throws ValidationException, TaskNotFoundException {
+      throws ValidationException, TaskNotFoundException, OverlapException {
     RegularTask reg1 =
         addAndRetrieveRegularTask(
             createValidRegularTaskCreationDTOWithTime(
@@ -254,7 +255,7 @@ public class InMemoryTaskManagerTest {
   @Test
   @DisplayName("getPrioritizedTasks should correctly order tasks by start time")
   void testGetPrioritizedTasks_TasksWithStartTime_ReturnsSortedByStartTime()
-      throws ValidationException {
+      throws ValidationException, OverlapException {
     RegularTask task1 =
         addAndRetrieveRegularTask(
             createValidRegularTaskCreationDTOWithTime(
@@ -279,7 +280,8 @@ public class InMemoryTaskManagerTest {
 
   @Test
   @DisplayName("getPrioritizedTasks: Tasks without start time should be at the end")
-  void testGetPrioritizedTasks_TasksWithoutStartTime_AreLast() throws ValidationException {
+  void testGetPrioritizedTasks_TasksWithoutStartTime_AreLast()
+      throws ValidationException, OverlapException {
     RegularTask taskWithTime =
         addAndRetrieveRegularTask(
             createValidRegularTaskCreationDTOWithTime(
@@ -310,7 +312,7 @@ public class InMemoryTaskManagerTest {
   @Test
   @DisplayName("removeTasksByType should remove only RegularTasks")
   void testRemoveTasksByType_RegularTask_RemovesOnlyRegularTasks()
-      throws ValidationException, TaskNotFoundException {
+      throws ValidationException, TaskNotFoundException, OverlapException {
     RegularTask reg1 = addAndRetrieveRegularTask(createValidRegularTaskCreationDTO("Reg1"));
     EpicTask epic1 = addAndRetrieveEpicTask(createValidEpicTaskCreationDTO("Epic1"));
     addAndRetrieveSubTask(createValidSubTaskCreationDTO("Sub1", epic1.getId()));
@@ -329,7 +331,7 @@ public class InMemoryTaskManagerTest {
   @Test
   @DisplayName("removeTasksByType should remove only SubTasks and update Epics to NEW status")
   void testRemoveTasksByType_SubTask_RemovesOnlySubTasksUpdatesEpics()
-      throws ValidationException, TaskNotFoundException {
+      throws ValidationException, TaskNotFoundException, OverlapException {
     EpicTask epic1 = addAndRetrieveEpicTask(createValidEpicTaskCreationDTO("Epic1"));
     SubTask sub1 = addAndRetrieveSubTask(createValidSubTaskCreationDTO("Sub1", epic1.getId()));
     addAndRetrieveRegularTask(createValidRegularTaskCreationDTO("Reg1"));
@@ -359,7 +361,7 @@ public class InMemoryTaskManagerTest {
   @Test
   @DisplayName("removeTasksByType should remove EpicTasks and their SubTasks")
   void testRemoveTasksByType_EpicTask_RemovesEpicsAndTheirSubTasks()
-      throws ValidationException, TaskNotFoundException {
+      throws ValidationException, TaskNotFoundException, OverlapException {
     EpicTask epic1 = addAndRetrieveEpicTask(createValidEpicTaskCreationDTO("Epic1"));
     SubTask sub1 = addAndRetrieveSubTask(createValidSubTaskCreationDTO("Sub1", epic1.getId()));
     addAndRetrieveRegularTask(createValidRegularTaskCreationDTO("Reg1"));
@@ -408,7 +410,7 @@ public class InMemoryTaskManagerTest {
   @Test
   @DisplayName("removeTaskById should return empty Optional for a non-existent ID")
   void testRemoveTaskById_NonExistentId_ReturnsEmptyOptional()
-      throws ValidationException, TaskNotFoundException {
+      throws ValidationException, TaskNotFoundException, OverlapException {
     Optional<Task> removed = manager.removeTaskById(UUID.randomUUID());
     assertTrue(removed.isEmpty(), "Should return empty Optional for non-existent ID");
   }
@@ -416,7 +418,7 @@ public class InMemoryTaskManagerTest {
   @Test
   @DisplayName("removeTaskById should remove a RegularTask and return it")
   void testRemoveTaskById_RegularTask_RemovesAndReturnsTask()
-      throws ValidationException, TaskNotFoundException {
+      throws ValidationException, TaskNotFoundException, OverlapException {
     RegularTask reg1 = addAndRetrieveRegularTask(createValidRegularTaskCreationDTO("Reg1"));
     manager.getTask(reg1.getId()); // Add to history
 
@@ -433,7 +435,7 @@ public class InMemoryTaskManagerTest {
   @Test
   @DisplayName("removeTaskById should remove a SubTask, update Epic, and return it")
   void testRemoveTaskById_SubTask_RemovesUpdatesEpicReturnsTask()
-      throws ValidationException, TaskNotFoundException {
+      throws ValidationException, TaskNotFoundException, OverlapException {
     EpicTask epic1 = addAndRetrieveEpicTask(createValidEpicTaskCreationDTO("Epic1"));
     SubTask sub1 =
         addAndRetrieveSubTask(
@@ -483,7 +485,7 @@ public class InMemoryTaskManagerTest {
   @Test
   @DisplayName("removeTaskById removing the last SubTask should set Epic to NEW")
   void testRemoveTaskById_LastSubTask_SetsEpicToNew()
-      throws ValidationException, TaskNotFoundException {
+      throws ValidationException, TaskNotFoundException, OverlapException {
     EpicTask epic = addAndRetrieveEpicTask(createValidEpicTaskCreationDTO("Epic"));
     SubTask sub =
         addAndRetrieveSubTask(
@@ -502,7 +504,7 @@ public class InMemoryTaskManagerTest {
   @Test
   @DisplayName("removeTaskById should remove an EpicTask and its SubTasks, and return it")
   void testRemoveTaskById_EpicTask_RemovesEpicAndSubTasksReturnsTask()
-      throws ValidationException, TaskNotFoundException {
+      throws ValidationException, TaskNotFoundException, OverlapException {
     EpicTask epic1 = addAndRetrieveEpicTask(createValidEpicTaskCreationDTO("Epic1"));
     SubTask sub1 = addAndRetrieveSubTask(createValidSubTaskCreationDTO("Sub1", epic1.getId()));
     manager.getTask(epic1.getId()); // Add to history
@@ -539,7 +541,8 @@ public class InMemoryTaskManagerTest {
 
   @Test
   @DisplayName("getTask should return the task and add it to history")
-  void testGetTask_ExistingTask_ReturnsTaskAndAddsToHistory() throws ValidationException {
+  void testGetTask_ExistingTask_ReturnsTaskAndAddsToHistory()
+      throws ValidationException, OverlapException {
     RegularTask reg1 = addAndRetrieveRegularTask(createValidRegularTaskCreationDTO("Reg1"));
     Optional<Task> found = manager.getTask(reg1.getId());
 
@@ -551,7 +554,8 @@ public class InMemoryTaskManagerTest {
 
   @Test
   @DisplayName("getTask: Accessing multiple tasks updates history correctly (LRU)")
-  void testGetTask_AccessMultipleTimes_UpdatesHistoryCorrectly() throws ValidationException {
+  void testGetTask_AccessMultipleTimes_UpdatesHistoryCorrectly()
+      throws ValidationException, OverlapException {
     RegularTask task1 = addAndRetrieveRegularTask(createValidRegularTaskCreationDTO("Task1"));
     RegularTask task2 = addAndRetrieveRegularTask(createValidRegularTaskCreationDTO("Task2"));
 
@@ -574,7 +578,7 @@ public class InMemoryTaskManagerTest {
 
   @Test
   @DisplayName("addTask (Regular) should add a valid RegularTask")
-  void testAddRegularTask_ValidDto_AddsTask() throws ValidationException {
+  void testAddRegularTask_ValidDto_AddsTask() throws ValidationException, OverlapException {
     RegularTaskCreationDTO dto =
         createValidRegularTaskCreationDTOWithTime("RegTime", DEFAULT_START_TIME, DEFAULT_DURATION);
     RegularTask created = addAndRetrieveRegularTask(dto);
@@ -602,14 +606,15 @@ public class InMemoryTaskManagerTest {
   }
 
   @Test
-  @DisplayName("addTask (Regular) should throw ValidationException on time overlap")
-  void testAddRegularTask_TimeOverlap_ThrowsValidationException() throws ValidationException {
+  @DisplayName("addTask (Regular) should throw OverlapException on time overlap")
+  void testAddRegularTask_TimeOverlap_ThrowsOverlapException()
+      throws ValidationException, OverlapException {
     addAndRetrieveRegularTask(
         createValidRegularTaskCreationDTOWithTime("Reg1", DEFAULT_START_TIME, DEFAULT_DURATION));
     RegularTaskCreationDTO overlappingDto =
         createValidRegularTaskCreationDTOWithTime(
             "Reg2Overlap", DEFAULT_START_TIME.plusHours(1), DEFAULT_DURATION); // Overlaps
-    assertThrows(ValidationException.class, () -> manager.addTask(overlappingDto));
+    assertThrows(OverlapException.class, () -> manager.addTask(overlappingDto));
   }
 
   // --- addTask(EpicTaskCreationDTO dto) Tests ---
@@ -647,7 +652,7 @@ public class InMemoryTaskManagerTest {
   @Test
   @DisplayName("addTask (SubTask) should add a valid SubTask and update Epic")
   void testAddSubTask_ValidDto_AddsTaskAndUpdateEpic()
-      throws ValidationException, TaskNotFoundException {
+      throws ValidationException, TaskNotFoundException, OverlapException {
     EpicTask epic = addAndRetrieveEpicTask(createValidEpicTaskCreationDTO("ParentEpic"));
     SubTaskCreationDTO subDto =
         createValidSubTaskCreationDTOWithTime(
@@ -684,7 +689,8 @@ public class InMemoryTaskManagerTest {
   @Test
   @DisplayName(
       "addTask (SubTask) should throw ValidationException if target Epic ID is not an Epic")
-  void testAddSubTask_TargetEpicIdIsNotEpic_ThrowsValidationException() throws ValidationException {
+  void testAddSubTask_TargetEpicIdIsNotEpic_ThrowsValidationException()
+      throws ValidationException, OverlapException {
     RegularTask notAnEpic =
         addAndRetrieveRegularTask(createValidRegularTaskCreationDTO("NotAnEpic"));
     SubTaskCreationDTO subDto = createValidSubTaskCreationDTO("SubToRegular", notAnEpic.getId());
@@ -692,9 +698,9 @@ public class InMemoryTaskManagerTest {
   }
 
   @Test
-  @DisplayName("addTask (SubTask) should throw ValidationException on time overlap")
-  void testAddSubTask_TimeOverlap_ThrowsValidationException()
-      throws ValidationException, TaskNotFoundException {
+  @DisplayName("addTask (SubTask) should throw OverlapException")
+  void testAddSubTask_TimeOverlap_ThrowsOverlapException()
+      throws ValidationException, TaskNotFoundException, OverlapException {
     EpicTask epic = addAndRetrieveEpicTask(createValidEpicTaskCreationDTO("EpicForOverlap"));
     addAndRetrieveSubTask(
         createValidSubTaskCreationDTOWithTime(
@@ -703,7 +709,7 @@ public class InMemoryTaskManagerTest {
     SubTaskCreationDTO overlappingDto =
         createValidSubTaskCreationDTOWithTime(
             "Sub2Overlap", epic.getId(), DEFAULT_START_TIME.plusHours(1), DEFAULT_DURATION);
-    assertThrows(ValidationException.class, () -> manager.addTask(overlappingDto));
+    assertThrows(OverlapException.class, () -> manager.addTask(overlappingDto));
   }
 
   // --- updateTask(RegularTaskUpdateDTO dto) Tests ---
@@ -716,7 +722,7 @@ public class InMemoryTaskManagerTest {
   @Test
   @DisplayName("updateTask (Regular) should update an existing RegularTask")
   void testUpdateRegularTask_ValidDto_UpdatesTask()
-      throws ValidationException, TaskNotFoundException {
+      throws ValidationException, TaskNotFoundException, OverlapException {
     RegularTask original =
         addAndRetrieveRegularTask(
             createValidRegularTaskCreationDTOWithTime(
@@ -763,8 +769,9 @@ public class InMemoryTaskManagerTest {
   }
 
   @Test
-  @DisplayName("updateTask (Regular) should throw ValidationException on time overlap")
-  void testUpdateRegularTask_TimeOverlap_ThrowsValidationException() throws ValidationException {
+  @DisplayName("updateTask (Regular) should throw OverlapException on time overlap")
+  void testUpdateRegularTask_TimeOverlap_ThrowsOverlapException()
+      throws ValidationException, OverlapException {
     RegularTask task1 =
         addAndRetrieveRegularTask(
             createValidRegularTaskCreationDTOWithTime(
@@ -782,14 +789,14 @@ public class InMemoryTaskManagerTest {
             task2.getStatus(),
             DEFAULT_START_TIME.plusHours(1),
             DEFAULT_DURATION); // Overlaps task1
-    assertThrows(ValidationException.class, () -> manager.updateTask(updateDtoOverlapping));
+    assertThrows(OverlapException.class, () -> manager.updateTask(updateDtoOverlapping));
   }
 
   // --- updateTask(SubTaskUpdateDTO dto) Tests ---
   @Test
   @DisplayName("updateTask (SubTask) should update an existing SubTask and its Epic")
   void testUpdateSubTask_ValidDto_UpdatesTaskAndEpic()
-      throws ValidationException, TaskNotFoundException {
+      throws ValidationException, TaskNotFoundException, OverlapException {
     EpicTask epic = addAndRetrieveEpicTask(createValidEpicTaskCreationDTO("EpicForSubUpdate"));
     SubTask sub1 =
         addAndRetrieveSubTask(
@@ -824,7 +831,7 @@ public class InMemoryTaskManagerTest {
   @Test
   @DisplayName("updateTask (SubTask) changing status updates Epic status correctly")
   void testUpdateSubTask_StatusChange_UpdatesEpicStatusCorrectly()
-      throws ValidationException, TaskNotFoundException {
+      throws ValidationException, TaskNotFoundException, OverlapException {
     EpicTask epic = addAndRetrieveEpicTask(createValidEpicTaskCreationDTO("EpicStatusTest"));
     SubTask sub1 =
         addAndRetrieveSubTask(createValidSubTaskCreationDTO("Sub1Status", epic.getId())); // NEW
@@ -894,7 +901,7 @@ public class InMemoryTaskManagerTest {
   @DisplayName(
       "updateTask (SubTask) should throw ValidationException for non-existent Epic ID in DTO")
   void testUpdateSubTask_NonExistentEpicIdInDto_ThrowsValidationException()
-      throws ValidationException, TaskNotFoundException {
+      throws ValidationException, TaskNotFoundException, OverlapException {
     EpicTask realEpic = addAndRetrieveEpicTask(createValidEpicTaskCreationDTO("RealEpic"));
     SubTask sub =
         addAndRetrieveSubTask(createValidSubTaskCreationDTO("SubForEpicUpdate", realEpic.getId()));
@@ -914,7 +921,8 @@ public class InMemoryTaskManagerTest {
   // --- updateTask(EpicTaskUpdateDTO dto) Tests ---
   @Test
   @DisplayName("updateTask (Epic) should update an existing EpicTask (title, description)")
-  void testUpdateEpicTask_ValidDto_UpdatesTask() throws ValidationException, TaskNotFoundException {
+  void testUpdateEpicTask_ValidDto_UpdatesTask()
+      throws ValidationException, TaskNotFoundException, OverlapException {
     EpicTask originalEpic = addAndRetrieveEpicTask(createValidEpicTaskCreationDTO("OriginalEpic"));
     SubTask sub =
         addAndRetrieveSubTask(
@@ -967,7 +975,8 @@ public class InMemoryTaskManagerTest {
 
   @Test
   @DisplayName("getEpicSubtasks should throw ValidationException if ID is not for an Epic")
-  void testGetEpicSubtasks_IdIsNotForEpic_ThrowsValidationException() throws ValidationException {
+  void testGetEpicSubtasks_IdIsNotForEpic_ThrowsValidationException()
+      throws ValidationException, OverlapException {
     RegularTask notAnEpic =
         addAndRetrieveRegularTask(createValidRegularTaskCreationDTO("NotAnEpicForSubtasks"));
     assertThrows(ValidationException.class, () -> manager.getEpicSubtasks(notAnEpic.getId()));
@@ -983,7 +992,7 @@ public class InMemoryTaskManagerTest {
   @Test
   @DisplayName("getEpicSubtasks should return all SubTasks for a given Epic")
   void testGetEpicSubtasks_EpicHasSubtasks_ReturnsSubtasks()
-      throws ValidationException, TaskNotFoundException {
+      throws ValidationException, TaskNotFoundException, OverlapException {
     EpicTask epic = addAndRetrieveEpicTask(createValidEpicTaskCreationDTO("EpicWithSubs"));
     SubTask sub1 = addAndRetrieveSubTask(createValidSubTaskCreationDTO("SubA", epic.getId()));
     SubTask sub2 = addAndRetrieveSubTask(createValidSubTaskCreationDTO("SubB", epic.getId()));
@@ -1005,7 +1014,7 @@ public class InMemoryTaskManagerTest {
   @Test
   @DisplayName("getAllTasksByClass should return only RegularTasks")
   void testGetAllTasksByClass_RegularTask_ReturnsOnlyRegularTasks()
-      throws ValidationException, TaskNotFoundException {
+      throws ValidationException, TaskNotFoundException, OverlapException {
     RegularTask reg1 = addAndRetrieveRegularTask(createValidRegularTaskCreationDTO("R1"));
     EpicTask epic1 = addAndRetrieveEpicTask(createValidEpicTaskCreationDTO("E1"));
     addAndRetrieveSubTask(createValidSubTaskCreationDTO("S1", epic1.getId()));
@@ -1018,7 +1027,7 @@ public class InMemoryTaskManagerTest {
   @Test
   @DisplayName("getAllTasksByClass for base Task class should return all tasks")
   void testGetAllTasksByClass_BaseTaskClass_ReturnsAllTasks()
-      throws ValidationException, TaskNotFoundException {
+      throws ValidationException, TaskNotFoundException, OverlapException {
     addAndRetrieveRegularTask(createValidRegularTaskCreationDTO("R1"));
     EpicTask epic1 = addAndRetrieveEpicTask(createValidEpicTaskCreationDTO("E1"));
     addAndRetrieveSubTask(createValidSubTaskCreationDTO("S1", epic1.getId()));
@@ -1044,7 +1053,7 @@ public class InMemoryTaskManagerTest {
   @Test
   @DisplayName("getHistory should not contain deleted tasks")
   void testGetHistory_AfterRemoveTask_AccessedTaskIsRemovedFromHistory()
-      throws ValidationException, TaskNotFoundException {
+      throws ValidationException, TaskNotFoundException, OverlapException {
     RegularTask task = addAndRetrieveRegularTask(createValidRegularTaskCreationDTO("HistoryTask"));
     manager.getTask(task.getId()); // Add to history
     assertTrue(manager.getHistory().stream().anyMatch(tv -> tv.getId().equals(task.getId())));
@@ -1055,7 +1064,8 @@ public class InMemoryTaskManagerTest {
 
   @Test
   @DisplayName("getHistory: Accessing a non-existent task should not change history")
-  void testGetHistory_AccessNonExistentTask_HistoryUnchanged() throws ValidationException {
+  void testGetHistory_AccessNonExistentTask_HistoryUnchanged()
+      throws ValidationException, OverlapException {
     RegularTask task = addAndRetrieveRegularTask(createValidRegularTaskCreationDTO("Existing"));
     manager.getTask(task.getId());
     int historySizeBefore = manager.getHistory().size();
@@ -1068,7 +1078,8 @@ public class InMemoryTaskManagerTest {
   // --- Complex Scenarios ---
   @Test
   @DisplayName("Epic status should be NEW if all SubTasks are NEW")
-  void testEpicStatus_AllSubTasksNew_EpicIsNew() throws ValidationException, TaskNotFoundException {
+  void testEpicStatus_AllSubTasksNew_EpicIsNew()
+      throws ValidationException, TaskNotFoundException, OverlapException {
     EpicTask epic = addAndRetrieveEpicTask(createValidEpicTaskCreationDTO("EpicAllNew"));
     addAndRetrieveSubTask(createValidSubTaskCreationDTO("SubNew1", epic.getId()));
     addAndRetrieveSubTask(createValidSubTaskCreationDTO("SubNew2", epic.getId()));
@@ -1080,7 +1091,7 @@ public class InMemoryTaskManagerTest {
   @Test
   @DisplayName("Epic status should be DONE if all SubTasks are DONE")
   void testEpicStatus_AllSubTasksDone_EpicIsDone()
-      throws ValidationException, TaskNotFoundException {
+      throws ValidationException, TaskNotFoundException, OverlapException {
     EpicTask epic = addAndRetrieveEpicTask(createValidEpicTaskCreationDTO("EpicAllDone"));
     SubTask sub1 = addAndRetrieveSubTask(createValidSubTaskCreationDTO("SubDone1", epic.getId()));
     SubTask sub2 = addAndRetrieveSubTask(createValidSubTaskCreationDTO("SubDone2", epic.getId()));
@@ -1111,7 +1122,7 @@ public class InMemoryTaskManagerTest {
   @Test
   @DisplayName("Epic status should be IN_PROGRESS if SubTasks have mixed statuses (NEW and DONE)")
   void testEpicStatus_MixedNewAndDoneSubTasks_EpicIsInProgress()
-      throws ValidationException, TaskNotFoundException {
+      throws ValidationException, TaskNotFoundException, OverlapException {
     EpicTask epic = addAndRetrieveEpicTask(createValidEpicTaskCreationDTO("EpicMixedNewDone"));
     SubTask subNew =
         addAndRetrieveSubTask(createValidSubTaskCreationDTO("SubNewMix", epic.getId()));
@@ -1137,7 +1148,7 @@ public class InMemoryTaskManagerTest {
   @DisplayName(
       "Epic status should be IN_PROGRESS if SubTasks have mixed statuses (NEW and IN_PROGRESS)")
   void testEpicStatus_MixedNewAndInProgressSubTasks_EpicIsInProgress()
-      throws ValidationException, TaskNotFoundException {
+      throws ValidationException, TaskNotFoundException, OverlapException {
     EpicTask epic = addAndRetrieveEpicTask(createValidEpicTaskCreationDTO("EpicMixedNewProgress"));
     SubTask subNew =
         addAndRetrieveSubTask(createValidSubTaskCreationDTO("SubNewMixP", epic.getId()));
@@ -1162,7 +1173,7 @@ public class InMemoryTaskManagerTest {
   @DisplayName(
       "Epic status should be IN_PROGRESS if SubTasks have mixed statuses (IN_PROGRESS and DONE)")
   void testEpicStatus_MixedInProgressAndDoneSubTasks_EpicIsInProgress()
-      throws ValidationException, TaskNotFoundException {
+      throws ValidationException, TaskNotFoundException, OverlapException {
     EpicTask epic = addAndRetrieveEpicTask(createValidEpicTaskCreationDTO("EpicMixedProgressDone"));
     SubTask subInProgress =
         addAndRetrieveSubTask(createValidSubTaskCreationDTO("SubProgressMixD", epic.getId()));
@@ -1195,7 +1206,7 @@ public class InMemoryTaskManagerTest {
   @Test
   @DisplayName("Epic time calculation: should be earliest start and latest end of subtasks")
   void testEpicTimeCalculation_AggregatesSubTaskTimes()
-      throws ValidationException, TaskNotFoundException {
+      throws ValidationException, TaskNotFoundException, OverlapException {
     EpicTask epic = addAndRetrieveEpicTask(createValidEpicTaskCreationDTO("EpicTimeAgg"));
     LocalDateTime start1 = DEFAULT_START_TIME;
     Duration dur1 = Duration.ofHours(2); // ends at start1 + 2h
@@ -1229,7 +1240,7 @@ public class InMemoryTaskManagerTest {
   @Test
   @DisplayName("Epic time calculation: if one subtask has no time, it's ignored for epic time")
   void testEpicTimeCalculation_IgnoreSubTaskWithNoTime()
-      throws ValidationException, TaskNotFoundException {
+      throws ValidationException, TaskNotFoundException, OverlapException {
     EpicTask epic = addAndRetrieveEpicTask(createValidEpicTaskCreationDTO("EpicTimeIgnore"));
     LocalDateTime subTimeStart = DEFAULT_START_TIME;
     Duration subTimeDuration = DEFAULT_DURATION;
@@ -1247,7 +1258,7 @@ public class InMemoryTaskManagerTest {
   @Test
   @DisplayName("Epic time calculation: if all subtasks have no time, epic has no time")
   void testEpicTimeCalculation_AllSubTasksNoTime_EpicNoTime()
-      throws ValidationException, TaskNotFoundException {
+      throws ValidationException, TaskNotFoundException, OverlapException {
     EpicTask epic = addAndRetrieveEpicTask(createValidEpicTaskCreationDTO("EpicAllNoTime"));
     addAndRetrieveSubTask(createValidSubTaskCreationDTO("SubNoTime1", epic.getId()));
     addAndRetrieveSubTask(createValidSubTaskCreationDTO("SubNoTime2", epic.getId()));

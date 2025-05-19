@@ -15,21 +15,23 @@ public class InMemoryTaskRepository implements TaskRepository {
   private final NavigableMap<UUID, Task> store = new TreeMap<>();
 
   /**
-   * Adds a new task to the repository. The task must have a unique ID that isn't already present in
-   * the repository.
+   * Adds a new task to the repository and returns it. The task must have a unique ID that isn't
+   * already present in the repository.
    *
    * @param task the task to add to the repository
+   * @return the added task
    * @throws NullPointerException if the task is null
    * @throws IllegalArgumentException if a task with the same ID already exists in the repository
    */
   @Override
-  public void addTask(final Task task) {
+  public <T extends Task> T addTask(final T task) {
     Objects.requireNonNull(task, TASK_CAN_T_BE_NULL);
     if (store.containsKey(task.getId())) {
       throw new IllegalArgumentException(
           String.format("Task with id %s already exists in store", task.getId()));
     }
     store.put(task.getId(), task);
+    return task;
   }
 
   /**
