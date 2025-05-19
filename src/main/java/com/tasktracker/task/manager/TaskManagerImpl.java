@@ -193,8 +193,16 @@ public class TaskManagerImpl implements TaskManager {
     return result;
   }
 
+  /**
+   * Creates and adds a new regular task to the repository based on the provided DTO.
+   *
+   * @param dto The DTO containing the required fields for creating a regular task
+   * @return The newly created and persisted RegularTask
+   * @throws ValidationException if the DTO validation fails
+   * @throws NullPointerException if the DTO is null
+   */
   @Override
-  public void addTask(final RegularTaskCreationDTO dto) throws ValidationException {
+  public RegularTask addTask(final RegularTaskCreationDTO dto) throws ValidationException {
     validateDto(dto, RegularTaskCreationDTO.class);
     LocalDateTime creationTimestamp = LocalDateTime.now();
     RegularTask newTask =
@@ -208,7 +216,7 @@ public class TaskManagerImpl implements TaskManager {
             dto.startTime(),
             dto.duration());
     index.add(newTask);
-    store.addTask(newTask);
+    return store.addTask(newTask);
   }
 
   /**
@@ -231,8 +239,18 @@ public class TaskManagerImpl implements TaskManager {
     }
   }
 
+  /**
+   * Creates and adds a new Epic Task to the repository based on the provided DTO. The Epic Task is
+   * initialized with NEW status, empty subtasks set and current timestamps.
+   *
+   * @param dto The DTO containing creation data including title, description and optional start
+   *     time
+   * @return The newly created and persisted Epic Task
+   * @throws ValidationException if the DTO validation fails
+   * @throws NullPointerException if the DTO is null
+   */
   @Override
-  public void addTask(final EpicTaskCreationDTO dto) throws ValidationException {
+  public EpicTask addTask(final EpicTaskCreationDTO dto) throws ValidationException {
     validateDto(dto, EpicTaskCreationDTO.class);
     LocalDateTime currentTime = LocalDateTime.now();
     EpicTask newTask =
@@ -246,11 +264,22 @@ public class TaskManagerImpl implements TaskManager {
             currentTime,
             dto.startTime(),
             null);
-    store.addTask(newTask);
+    return store.addTask(newTask);
   }
 
+  /**
+   * Creates and adds a new Sub-Task to the repository, associating it with an existing Epic Task.
+   * The new Sub-Task is initialized with NEW status and current timestamps.
+   *
+   * @param dto the DTO containing Sub-Task creation data including title, description, Epic Task
+   *     ID, start time, and duration
+   * @return the newly created and persisted Sub-Task
+   * @throws ValidationException if the DTO validation fails or the Epic Task does not exist
+   * @throws TaskNotFoundException if the referenced Epic Task cannot be found
+   * @throws NullPointerException if the DTO is null
+   */
   @Override
-  public void addTask(final SubTaskCreationDTO dto)
+  public SubTask addTask(final SubTaskCreationDTO dto)
       throws ValidationException, TaskNotFoundException {
     Objects.requireNonNull(dto, "SubTaskCreationDTO cannot be null.");
     validateDto(dto, SubTaskCreationDTO.class);
@@ -268,8 +297,9 @@ public class TaskManagerImpl implements TaskManager {
             dto.startTime(),
             dto.duration());
     index.add(subTask);
-    store.addTask(subTask);
+    SubTask addedTask = store.addTask(subTask);
     attachSubTaskToEpicTask(subTask);
+    return addedTask;
   }
 
   @Override

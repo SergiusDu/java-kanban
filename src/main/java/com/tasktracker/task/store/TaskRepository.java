@@ -15,14 +15,15 @@ import java.util.function.Predicate;
 public interface TaskRepository {
 
   /**
-   * Adds a new task to the repository. The task must have a unique ID that isn't already present in
-   * the repository.
+   * Adds a new task to the repository and returns it. The task must have a unique ID that isn't
+   * already present in the repository.
    *
    * @param task the task to add to the repository
+   * @return the added task
    * @throws NullPointerException if the task is null
    * @throws IllegalArgumentException if a task with the same ID already exists in the repository
    */
-  void addTask(final Task task);
+  <T extends Task> T addTask(final T task);
 
   /**
    * Updates an existing task in the repository with the provided updated task data.

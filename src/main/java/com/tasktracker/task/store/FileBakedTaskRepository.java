@@ -25,6 +25,13 @@ public final class FileBakedTaskRepository extends InMemoryTaskRepository
     loadFromFileToMemory();
   }
 
+  @Override
+  public <T extends Task> T addTask(final T task) {
+    T addedTask = super.addTask(task);
+    save();
+    return addedTask;
+  }
+
   private void ensureDataFileExists() throws ManagerSaveException {
     Objects.requireNonNull(dataFilePath, "Data file path can't be null");
     final Path parent = dataFilePath.getParent();
@@ -101,7 +108,7 @@ public final class FileBakedTaskRepository extends InMemoryTaskRepository
                   }
                 })
             .filter(Objects::nonNull)
-            .collect(Collectors.toList());
+            .toList();
 
     for (Task task : tasksFromFile) {
       try {
@@ -123,12 +130,6 @@ public final class FileBakedTaskRepository extends InMemoryTaskRepository
             + "\n"
             + tasksToSave.stream().map(TaskCsvMapper::toCsv).collect(Collectors.joining("\n"));
     writeFile(csvContent);
-  }
-
-  @Override
-  public void addTask(final Task task) {
-    super.addTask(task);
-    save();
   }
 
   @Override
