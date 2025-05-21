@@ -6,4 +6,4 @@ import java.util.UUID;
 
 public record SubTaskCreationDTO(
     String title, String description, UUID epicId, LocalDateTime startTime, Duration duration)
-    implements TaskCreationDTO {}
+    implements TaskModificationDto {}

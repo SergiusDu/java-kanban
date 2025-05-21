@@ -12,4 +12,5 @@ public record SubTaskUpdateDTO(
     TaskStatus status,
     UUID epicId,
     LocalDateTime startTime,
-    Duration duration) {}
+    Duration duration)
+    implements TaskModificationDto {}

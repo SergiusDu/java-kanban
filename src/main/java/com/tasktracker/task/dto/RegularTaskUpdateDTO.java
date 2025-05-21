@@ -11,4 +11,5 @@ public record RegularTaskUpdateDTO(
     String description,
     TaskStatus status,
     LocalDateTime startTime,
-    Duration duration) {}
+    Duration duration)
+    implements TaskModificationDto {}

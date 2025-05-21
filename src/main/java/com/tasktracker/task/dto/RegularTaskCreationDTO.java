@@ -5,4 +5,4 @@ import java.time.LocalDateTime;
 
 public record RegularTaskCreationDTO(
     String title, String description, LocalDateTime startTime, Duration duration)
-    implements TaskCreationDTO {}
+    implements TaskModificationDto {}
