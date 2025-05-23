@@ -10,10 +10,11 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 
-public class RequestRouter {
+public class RequestRouter implements Router {
 
   private final TrieNode root = new TrieNode();
 
+  @Override
   public RequestRouter addRoute(String pathTemplate, String httpMethod, BaseHttpHandler handler)
       throws DuplicateParameterException {
     Objects.requireNonNull(pathTemplate, "Path template cannot be null");
@@ -48,6 +49,7 @@ public class RequestRouter {
     return this;
   }
 
+  @Override
   public Optional<RouteMatchResult> findRoute(URI uri, String httpMethod) {
     Objects.requireNonNull(uri, "uri не может быть null");
     Objects.requireNonNull(httpMethod, "httpMethod не может быть null");
@@ -78,6 +80,7 @@ public class RequestRouter {
     return Optional.empty();
   }
 
+  @Override
   public boolean basePathExists(URI uri) {
     Objects.requireNonNull(uri, "uri не может быть null");
     String path = uri.getPath();
