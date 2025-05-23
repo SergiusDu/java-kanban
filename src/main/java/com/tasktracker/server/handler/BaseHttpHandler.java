@@ -75,6 +75,8 @@ public abstract class BaseHttpHandler implements HttpHandler {
         ResponseUtility.sendInternalServerError(
             exchange, new ApiErrorMessage("An unexpected internal server error occurred."));
       }
+    } finally {
+      exchange.close();
     }
   }
 
