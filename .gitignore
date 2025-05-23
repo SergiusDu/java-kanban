@@ -29,3 +29,20 @@ hs_err_pid*
 /.idea/modules.xml
 /.idea/vcs.xml
 /.idea/workspace.xml
+
+# Ignore Gradle project-specific cache directory
+.gradle
+
+# Ignore Gradle build output directory
+build
+
+# Gradle
+.gradle/
+build/
+out/
+tmp/
+generated/
+gradlew
+gradlew.bat
+
+java-kanban.iml

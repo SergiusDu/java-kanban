@@ -1,6 +1,6 @@
 package com.tasktracker.task.service;
 
-import com.tasktracker.task.exception.ValidationException;
+import com.tasktracker.task.exception.OverlapException;
 import com.tasktracker.task.model.implementations.EpicTask;
 import com.tasktracker.task.model.implementations.SubTask;
 import com.tasktracker.task.model.implementations.Task;
@@ -66,14 +66,14 @@ public final class TreeSetScheduleIndex implements ScheduleIndex {
   }
 
   @Override
-  public void add(Task task) throws ValidationException {
+  public void add(Task task) throws OverlapException {
     Objects.requireNonNull(task, "Task to add cannot be null");
     ensureNoOverlap(task);
     timeLine.add(task);
   }
 
   @Override
-  public void update(Task oldTask, Task newTask) throws ValidationException {
+  public void update(Task oldTask, Task newTask) throws OverlapException {
     Objects.requireNonNull(oldTask, "Old task cannot be null for update");
     Objects.requireNonNull(newTask, "New task cannot be null for update");
 
@@ -82,7 +82,7 @@ public final class TreeSetScheduleIndex implements ScheduleIndex {
     tempTimeLine.remove(oldTask);
 
     if (checkOverlapAgainstCollection(newTask, tempTimeLine)) {
-      throw new ValidationException(
+      throw new OverlapException(
           String.format(
               "Time overlap detected for updated task. Task ID %s with start time '%s' and end time '%s'"
                   + " overlaps with an existing task in schedule",
@@ -96,7 +96,7 @@ public final class TreeSetScheduleIndex implements ScheduleIndex {
   @Override
   public void updateEpicAndSubtask(
       SubTask oldSubtask, SubTask newSubtask, EpicTask oldEpicTask, EpicTask newEpicTask)
-      throws ValidationException {
+      throws OverlapException {
     Objects.requireNonNull(oldSubtask, "Old subtask cannot be null");
     Objects.requireNonNull(newSubtask, "New subtask cannot be null");
     Objects.requireNonNull(oldEpicTask, "Old epic task cannot be null");
@@ -108,7 +108,7 @@ public final class TreeSetScheduleIndex implements ScheduleIndex {
     tempTimeLine.remove(oldEpicTask);
 
     if (checkOverlapAgainstCollection(newSubtask, tempTimeLine)) {
-      throw new ValidationException(
+      throw new OverlapException(
           String.format(
               "Time overlap detected for new subtask. Task ID %s with start time '%s' and end time '%s' overlaps.",
               newSubtask.getId(), newSubtask.getStartTime(), newSubtask.getEndTime()));
@@ -117,7 +117,7 @@ public final class TreeSetScheduleIndex implements ScheduleIndex {
     tempTimeLine.add(newSubtask);
 
     if (checkOverlapAgainstCollection(newEpicTask, tempTimeLine)) {
-      throw new ValidationException(
+      throw new OverlapException(
           String.format(
               "Time overlap detected for new epic task. Task ID %s with start time '%s' and end time '%s' overlaps.",
               newEpicTask.getId(), newEpicTask.getStartTime(), newEpicTask.getEndTime()));
@@ -129,10 +129,10 @@ public final class TreeSetScheduleIndex implements ScheduleIndex {
     timeLine.add(newEpicTask);
   }
 
-  private void ensureNoOverlap(Task newTask) throws ValidationException {
+  private void ensureNoOverlap(Task newTask) throws OverlapException {
     Objects.requireNonNull(newTask, "Task for overlap check cannot be null");
     if (hasOverlap(newTask)) {
-      throw new ValidationException(
+      throw new OverlapException(
           String.format(
               "Time overlap detected. Task ID %s with start time '%s' and end time '%s'"
                   + " overlaps with an existing task in schedule",

@@ -1,6 +1,7 @@
 package com.tasktracker.task.manager;
 
 import com.tasktracker.task.dto.*;
+import com.tasktracker.task.exception.OverlapException;
 import com.tasktracker.task.exception.ValidationException;
 import com.tasktracker.task.model.implementations.EpicTask;
 import com.tasktracker.task.model.implementations.RegularTask;
@@ -40,7 +41,10 @@ public interface TaskManager {
    *     unsupported
    */
   Optional<Task> removeTaskById(UUID id)
-      throws UnsupportedOperationException, ValidationException, TaskNotFoundException;
+      throws UnsupportedOperationException,
+          ValidationException,
+          TaskNotFoundException,
+          OverlapException;
 
   /**
    * Retrieves a com.tasktracker.task from the repository by its ID.
@@ -51,21 +55,52 @@ public interface TaskManager {
    */
   Optional<Task> getTask(UUID id);
 
-  void addTask(RegularTaskCreationDTO regularTaskCreationDTO) throws ValidationException;
+  /**
+   * Creates and adds a new regular task to the repository based on the provided DTO.
+   *
+   * @param regularTaskCreationDTO The DTO containing the required fields for creating a regular
+   *     task
+   * @return The newly created and persisted RegularTask
+   * @throws ValidationException if the DTO validation fails
+   * @throws NullPointerException if the DTO is null
+   */
+  RegularTask addTask(RegularTaskCreationDTO regularTaskCreationDTO)
+      throws ValidationException, OverlapException;
 
-  void addTask(EpicTaskCreationDTO epicTaskCreationDTO) throws ValidationException;
+  /**
+   * Creates and adds a new Epic Task to the repository based on the provided DTO. The Epic Task is
+   * initialized with NEW status, empty subtasks set, and current timestamps.
+   *
+   * @param epicTaskCreationDTO The DTO containing creation data including title, description, and
+   *     optional start time
+   * @return The newly created and persisted Epic Task
+   * @throws ValidationException if the DTO validation fails
+   * @throws NullPointerException if the DTO is null
+   */
+  EpicTask addTask(EpicTaskCreationDTO epicTaskCreationDTO) throws ValidationException;
 
-  void addTask(SubTaskCreationDTO subTaskCreationDTO)
-      throws ValidationException, TaskNotFoundException;
+  /**
+   * Creates and adds a new Sub-Task to the repository, associating it with an existing Epic Task.
+   * The new Sub-Task is initialized with NEW status and current timestamps.
+   *
+   * @param subTaskCreationDTO the DTO containing Sub-Task creation data including title,
+   *     description, Epic Task ID, start time, and duration
+   * @return the newly created and persisted Sub-Task
+   * @throws ValidationException if the DTO validation fails or the Epic Task does not exist
+   * @throws TaskNotFoundException if the referenced Epic Task cannot be found
+   * @throws NullPointerException if the DTO is null
+   */
+  SubTask addTask(SubTaskCreationDTO subTaskCreationDTO)
+      throws ValidationException, TaskNotFoundException, OverlapException;
 
   RegularTask updateTask(RegularTaskUpdateDTO regularTaskUpdateDTO)
-      throws ValidationException, TaskNotFoundException;
+      throws ValidationException, TaskNotFoundException, OverlapException;
 
   SubTask updateTask(SubTaskUpdateDTO subTaskUpdateDTO)
-      throws ValidationException, TaskNotFoundException;
+      throws ValidationException, TaskNotFoundException, OverlapException;
 
   EpicTask updateTask(EpicTaskUpdateDTO epicTaskUpdateDTO)
-      throws ValidationException, TaskNotFoundException;
+      throws ValidationException, TaskNotFoundException, OverlapException;
 
   Collection<SubTask> getEpicSubtasks(UUID epicId) throws ValidationException;
 
