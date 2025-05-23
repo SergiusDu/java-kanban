@@ -5,17 +5,17 @@ import com.sun.net.httpserver.HttpHandler;
 import com.tasktracker.server.dto.ApiErrorMessage;
 import com.tasktracker.server.dto.RouteMatchResult;
 import com.tasktracker.server.handler.BaseHttpHandler;
-import com.tasktracker.server.router.RequestRouter;
+import com.tasktracker.server.router.Router;
 import com.tasktracker.server.utility.ResponseUtility;
 import java.io.IOException;
 import java.net.URI;
 import java.util.Map;
 import java.util.Optional;
 
-public class DispatcherHandler implements HttpHandler {
-  private final RequestRouter router;
+public class DispatcherHandler implements Dispatcher {
+  private final Router router;
 
-  public DispatcherHandler(RequestRouter router) {
+  public DispatcherHandler(Router router) {
     this.router = router;
   }
 
